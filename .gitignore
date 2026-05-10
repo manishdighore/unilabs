@@ -45,9 +45,10 @@ ENV/
 *.log
 logs/
 
-# Database
-db/
+# Database (files only, not the module)
 *.db
+*.sqlite
+*.sqlite3
 *.sqlite
 *.sqlite3
 
