@@ -13,11 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create necessary directories first
+RUN mkdir -p /app/db /app/reports /app/static /app/templates
+
 # Copy application files
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/db /app/reports
+# Ensure directories exist and have correct permissions
+RUN mkdir -p /app/db /app/reports /app/static /app/templates && \
+    chmod -R 755 /app
 
 # Expose port
 EXPOSE 8001

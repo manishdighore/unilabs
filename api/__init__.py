@@ -22,8 +22,12 @@ from scheduler import (
 log = logging.getLogger("api")
 app = FastAPI(title="Unilabs Competitive Intelligence Platform", version="1.0.0")
 
-# Serve static files
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+# Serve static files (if directory exists)
+static_dir = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+else:
+    log.warning(f"Static directory not found at {static_dir}, skipping mount")
 
 
 # --- Models ---------------------------------------------------------------
