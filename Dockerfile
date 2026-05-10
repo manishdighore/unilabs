@@ -19,9 +19,12 @@ RUN mkdir -p /app/db /app/reports /app/static /app/templates
 # Copy application files
 COPY . .
 
-# Ensure directories exist and have correct permissions
-RUN mkdir -p /app/db /app/reports /app/static /app/templates && \
-    chmod -R 755 /app
+# Ensure all necessary directories exist with correct permissions
+RUN mkdir -p /app/db /app/reports /app/static /app/templates /app/agents /app/api /app/scheduler && \
+    chmod -R 755 /app && \
+    # Verify key files exist
+    [ -f /app/app.py ] || (echo "ERROR: app.py not found" && exit 1) && \
+    [ -d /app/templates ] || (echo "ERROR: templates directory not found" && exit 1)
 
 # Expose port
 EXPOSE 8001

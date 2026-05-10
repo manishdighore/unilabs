@@ -69,7 +69,27 @@ def on_startup():
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
     path = os.path.join(BASE_DIR, "templates", "dashboard.html")
-    return HTMLResponse(open(path, encoding="utf-8").read())
+    try:
+        with open(path, encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    except FileNotFoundError:
+        log.warning(f"Dashboard template not found at {path}")
+        # Fallback: Return a basic HTML page with API links
+        return HTMLResponse("""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Unilabs Competitive Intelligence</title></head>
+        <body>
+            <h1>Unilabs Competitive Intelligence Platform</h1>
+            <p>Dashboard template not found. The API is running.</p>
+            <ul>
+                <li><a href="/docs">API Documentation</a></li>
+                <li><a href="/api/agents">Agents List</a></li>
+                <li><a href="/api/runs">Runs History</a></li>
+            </ul>
+        </body>
+        </html>
+        """)
 
 
 # --- API Keys -------------------------------------------------------------
