@@ -342,10 +342,55 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
 const RunConfigPanel = ({agents, countries, languages, competitors, enabledAgents, setEnabledAgents,
                          config, setConfig, onRun, running, keysOk}) => {
   const [customComp, setCustomComp] = useState("");
+  const [customModes, setCustomModes] = useState([]);
+  const [showCreateMode, setShowCreateMode] = useState(false);
+  const [newModeName, setNewModeName] = useState("");
+  const [newModeDesc, setNewModeDesc] = useState("");
+  const [newModeFocus, setNewModeFocus] = useState("");
+  const [periodType, setPeriodType] = useState("quarterly"); // quarterly or monthly
+  const [selectedMonth, setSelectedMonth] = useState("04"); // 01-12
+  
+  const MONTHS = [
+    {code: "01", name: "January"}, {code: "02", name: "February"}, {code: "03", name: "March"},
+    {code: "04", name: "April"}, {code: "05", name: "May"}, {code: "06", name: "June"},
+    {code: "07", name: "July"}, {code: "08", name: "August"}, {code: "09", name: "September"},
+    {code: "10", name: "October"}, {code: "11", name: "November"}, {code: "12", name: "December"},
+  ];
+  
+  useEffect(() => {
+    fetch('/api/custom-modes')
+      .then(r => r.json())
+      .then(d => setCustomModes(d.modes || []))
+      .catch(e => console.error("Failed to load custom modes:", e));
+  }, []);
+
   const toggleCountry = (code) => setConfig(c => ({...c, countries: c.countries.includes(code)?c.countries.filter(x=>x!==code):[...c.countries,code]}));
   const toggleCompetitor = (name) => setConfig(c => ({...c, competitors: c.competitors.includes(name)?c.competitors.filter(x=>x!==name):[...c.competitors,name]}));
   const addCustom = () => { const n=customComp.trim(); if(n&&!config.custom_competitors.includes(n)){setConfig(c=>({...c,custom_competitors:[...c.custom_competitors,n]}));setCustomComp("");} };
   const removeCustom = (name) => setConfig(c=>({...c,custom_competitors:c.custom_competitors.filter(x=>x!==name)}));
+  
+  const handleCreateMode = async () => {
+    if(!newModeName.trim() || !newModeFocus.trim()) return;
+    try {
+      const res = await fetch('/api/custom-modes', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          mode_name: newModeName,
+          description: newModeDesc,
+          dynamic_params: {focus_area: newModeFocus, specific_threats: [], analysis_angle: "", key_questions: []}
+        })
+      });
+      if(res.ok) {
+        const newMode = await res.json();
+        setCustomModes([...customModes, {id: newMode.id, mode_name: newMode.mode_name, dynamic_params: newMode.dynamic_params}]);
+        setShowCreateMode(false);
+        setNewModeName("");
+        setNewModeDesc("");
+        setNewModeFocus("");
+      }
+    } catch(e) { console.error("Failed to create mode:", e); }
+  };
 
   return (
     <div style={{background:'white',borderRadius:16,border:'1px solid var(--border)',overflow:'hidden',boxShadow:'var(--shadow-sm)'}}>
@@ -361,21 +406,107 @@ const RunConfigPanel = ({agents, countries, languages, competitors, enabledAgent
         </div>
       </div>
       <div style={{padding:'14px 22px'}}>
+        {/* Year, Period, Language */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:14}}>
-          {[
-            {label:'Year',value:config.years[0],opts:[2024,2025,2026],onChange:v=>setConfig(c=>({...c,years:[+v]}))},
-            {label:'Period',value:config.periods[0],opts:['Q1','Q2','Q3','Q4','H1','H2','FY'],onChange:v=>setConfig(c=>({...c,periods:[v]}))},
-            {label:'Language',value:config.language,opts:languages.map(l=>l.code),labels:languages.reduce((a,l)=>(a[l.code]=l.name,a),{}),onChange:v=>setConfig(c=>({...c,language:v}))},
-          ].map((f,i)=>(
-            <div key={i}>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:5,display:'block'}}>{f.label}</label>
-              <select value={f.value} onChange={e=>f.onChange(e.target.value)}
-                style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1px solid var(--border)',
-                  background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',appearance:'auto'}}>
-                {f.opts.map(o=><option key={o} value={o}>{f.labels?f.labels[o]:o}</option>)}
-              </select>
+          <div>
+            <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:5,display:'block'}}>Year</label>
+            <select value={config.years[0]} onChange={e=>setConfig(c=>({...c,years:[+e.target.value]}))}
+              style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1px solid var(--border)',
+                background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}>
+              {[2024,2025,2026].map(y=><option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:5,display:'block'}}>Language</label>
+            <select value={config.language} onChange={e=>setConfig(c=>({...c,language:e.target.value}))}
+              style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1px solid var(--border)',
+                background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}>
+              {languages.map(l=><option key={l.code} value={l.code}>{l.name}</option>)}
+            </select>
+          </div>
+          <div/>
+        </div>
+
+        {/* Period Type Toggle */}
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:6,display:'block'}}>Time Period</label>
+          <div style={{display:'flex',gap:8}}>
+            <button onClick={()=>setPeriodType('quarterly')} 
+              style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid',background:periodType==='quarterly'?'var(--navy)':'white',
+                color:periodType==='quarterly'?'white':'var(--text-muted)',fontSize:11,fontWeight:600,cursor:'pointer',transition:'.2s'}}>
+              Quarterly
+            </button>
+            <button onClick={()=>setPeriodType('monthly')}
+              style={{flex:1,padding:'8px',borderRadius:8,border:'1px solid',background:periodType==='monthly'?'var(--navy)':'white',
+                color:periodType==='monthly'?'white':'var(--text-muted)',fontSize:11,fontWeight:600,cursor:'pointer',transition:'.2s'}}>
+              Monthly
+            </button>
+          </div>
+        </div>
+
+        {/* Quarter Selector or Month Selector */}
+        {periodType === 'quarterly' ? (
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:6,display:'block'}}>Quarter</label>
+            <select value={config.periods[0]} onChange={e=>setConfig(c=>({...c,periods:[e.target.value]}))}
+              style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1px solid var(--border)',
+                background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}>
+              {['Q1','Q2','Q3','Q4','H1','H2','FY'].map(q=><option key={q} value={q}>{q}</option>)}
+            </select>
+          </div>
+        ) : (
+          <div style={{marginBottom:14}}>
+            <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:6,display:'block'}}>Month</label>
+            <select value={selectedMonth} onChange={e=>{setSelectedMonth(e.target.value); setConfig(c=>({...c,periods:[`M${e.target.value}`]}));}}
+              style={{width:'100%',padding:'9px 10px',borderRadius:8,border:'1px solid var(--border)',
+                background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}>
+              {MONTHS.map(m=><option key={m.code} value={m.code}>{m.name} ({m.code})</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Custom Mode Selector */}
+        <div style={{marginBottom:14,padding:12,borderRadius:10,background:'var(--purple-light)',border:'1px solid rgba(124,58,237,.15)'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <label style={{fontSize:10,fontWeight:600,color:'var(--purple)',textTransform:'uppercase',letterSpacing:'.3px'}}>
+              Custom Analysis Mode
+            </label>
+            <button onClick={()=>setShowCreateMode(!showCreateMode)}
+              style={{fontSize:9,padding:'3px 8px',borderRadius:6,border:'1px solid rgba(124,58,237,.3)',background:'rgba(124,58,237,.1)',
+                color:'var(--purple)',cursor:'pointer',fontWeight:600}}>+ New Mode</button>
+          </div>
+          {customModes.length > 0 ? (
+            <select onChange={e=>{const m=customModes.find(x=>x.id==e.target.value);if(m)setConfig(c=>({...c,custom_mode_id:m.id,dynamic_params:m.dynamic_params}));}}
+              style={{width:'100%',padding:'8px 10px',borderRadius:8,border:'1px solid rgba(124,58,237,.3)',
+                background:'rgba(124,58,237,.05)',color:'var(--purple)',fontSize:11,outline:'none'}}>
+              <option value="">Select a custom mode...</option>
+              {customModes.map(m=><option key={m.id} value={m.id}>{m.mode_name}</option>)}
+            </select>
+          ) : (
+            <p style={{fontSize:10,color:'var(--purple)',margin:0}}>No custom modes yet. Create one to tailor your analysis!</p>
+          )}
+          
+          {showCreateMode && (
+            <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid rgba(124,58,237,.2)'}}>
+              <input value={newModeName} onChange={e=>setNewModeName(e.target.value)} placeholder="Mode name (e.g. Q2 M&A Watch)"
+                style={{width:'100%',padding:'7px 8px',marginBottom:6,borderRadius:6,border:'1px solid rgba(124,58,237,.3)',
+                  background:'white',color:'var(--text-primary)',fontSize:10,outline:'none'}}/>
+              <input value={newModeDesc} onChange={e=>setNewModeDesc(e.target.value)} placeholder="Description..."
+                style={{width:'100%',padding:'7px 8px',marginBottom:6,borderRadius:6,border:'1px solid rgba(124,58,237,.3)',
+                  background:'white',color:'var(--text-primary)',fontSize:10,outline:'none'}}/>
+              <textarea value={newModeFocus} onChange={e=>setNewModeFocus(e.target.value)} placeholder="Focus area (e.g. M&A trends in Switzerland Q2)"
+                style={{width:'100%',padding:'7px 8px',marginBottom:6,borderRadius:6,border:'1px solid rgba(124,58,237,.3)',
+                  background:'white',color:'var(--text-primary)',fontSize:10,outline:'none',minHeight:60,fontFamily:'inherit'}}/>
+              <div style={{display:'flex',gap:6}}>
+                <button onClick={handleCreateMode}
+                  style={{flex:1,padding:'7px',borderRadius:6,border:'none',background:'var(--purple)',color:'white',
+                    fontSize:10,fontWeight:600,cursor:'pointer'}}>Create Mode</button>
+                <button onClick={()=>setShowCreateMode(false)}
+                  style={{flex:1,padding:'7px',borderRadius:6,border:'1px solid rgba(124,58,237,.3)',background:'transparent',
+                    color:'var(--purple)',fontSize:10,fontWeight:600,cursor:'pointer'}}>Cancel</button>
+              </div>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Markets */}
