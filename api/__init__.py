@@ -40,6 +40,18 @@ class RunConfig(BaseModel):
     language: str = "en"
     enabled_agents: Optional[List[str]] = None
     report_frequency: str = "quarterly"
+    custom_mode_id: Optional[int] = None
+    dynamic_params: Optional[dict] = None
+
+class CustomModeCreate(BaseModel):
+    mode_name: str
+    description: Optional[str] = ""
+    dynamic_params: dict  # {focus_area, specific_threats, analysis_angle, key_questions}
+
+class CustomModeUpdate(BaseModel):
+    mode_name: Optional[str] = None
+    description: Optional[str] = None
+    dynamic_params: Optional[dict] = None
 
 class ChatMessage(BaseModel):
     message: str
@@ -334,6 +346,71 @@ def update_scheduler_config(cfg: SchedulerConfig):
 @app.get("/api/alerts")
 def get_alerts(unread_only: bool = False):
     return db.list_alerts(unread_only=unread_only)
+
+
+# --- Custom Modes ---------------------------------------------------------
+@app.post("/api/custom-modes")
+def create_custom_mode(req: CustomModeCreate):
+    """Create a new custom analysis mode with dynamic parameters."""
+    try:
+        mode_id = db.create_custom_mode(
+            mode_name=req.mode_name,
+            description=req.description,
+            dynamic_params=req.dynamic_params
+        )
+        return {
+            "id": mode_id,
+            "mode_name": req.mode_name,
+            "description": req.description,
+            "dynamic_params": req.dynamic_params,
+            "status": "created"
+        }
+    except Exception as e:
+        raise HTTPException(400, f"Failed to create custom mode: {str(e)}")
+
+@app.get("/api/custom-modes")
+def list_custom_modes():
+    """List all custom analysis modes."""
+    modes = db.list_custom_modes()
+    return {"modes": modes, "count": len(modes)}
+
+@app.get("/api/custom-modes/{mode_id}")
+def get_custom_mode(mode_id: int):
+    """Get a specific custom mode."""
+    mode = db.get_custom_mode(mode_id)
+    if not mode:
+        raise HTTPException(404, "Custom mode not found")
+    return mode
+
+@app.put("/api/custom-modes/{mode_id}")
+def update_custom_mode(mode_id: int, req: CustomModeUpdate):
+    """Update a custom mode."""
+    mode = db.get_custom_mode(mode_id)
+    if not mode:
+        raise HTTPException(404, "Custom mode not found")
+    
+    updates = {}
+    if req.mode_name:
+        updates["mode_name"] = req.mode_name
+    if req.description:
+        updates["description"] = req.description
+    if req.dynamic_params:
+        updates["dynamic_params"] = req.dynamic_params
+    
+    if updates:
+        db.update_custom_mode(mode_id, **updates)
+    
+    return db.get_custom_mode(mode_id)
+
+@app.delete("/api/custom-modes/{mode_id}")
+def delete_custom_mode(mode_id: int):
+    """Delete (disable) a custom mode."""
+    mode = db.get_custom_mode(mode_id)
+    if not mode:
+        raise HTTPException(404, "Custom mode not found")
+    
+    db.delete_custom_mode(mode_id)
+    return {"status": "deleted", "mode_id": mode_id}
 
 
 # --- Chat Agent -----------------------------------------------------------

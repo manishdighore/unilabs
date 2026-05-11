@@ -55,6 +55,15 @@ def init_db():
         severity        TEXT    DEFAULT 'info',
         read            INTEGER DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS custom_modes (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        mode_name       TEXT    NOT NULL UNIQUE,
+        description     TEXT,
+        dynamic_params  TEXT    NOT NULL,
+        created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+        updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+        enabled         INTEGER DEFAULT 1
+    );
     """)
     conn.commit()
     conn.close()
@@ -143,6 +152,70 @@ def list_alerts(limit=100, unread_only=False):
     rows = conn.execute(q, (limit,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+# --- Custom Modes ---------------------------------------------------------
+def create_custom_mode(mode_name, description, dynamic_params):
+    """Create a custom mode with dynamic analysis parameters.
+    
+    Args:
+        mode_name: Unique name for the custom mode
+        description: Human-readable description
+        dynamic_params: Dict with keys like focus_area, key_questions, etc.
+    
+    Returns: mode_id
+    """
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO custom_modes(mode_name, description, dynamic_params) VALUES(?,?,?)",
+        (mode_name, description, json.dumps(dynamic_params)))
+    mode_id = cur.lastrowid
+    conn.commit()
+    conn.close()
+    return mode_id
+
+def get_custom_mode(mode_id):
+    """Get a custom mode by ID."""
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM custom_modes WHERE id=?", (mode_id,)).fetchone()
+    conn.close()
+    if row:
+        result = dict(row)
+        result["dynamic_params"] = json.loads(result["dynamic_params"])
+        return result
+    return None
+
+def list_custom_modes(limit=50):
+    """List all custom modes."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM custom_modes WHERE enabled=1 ORDER BY id DESC LIMIT ?",
+        (limit,)).fetchall()
+    conn.close()
+    result = []
+    for r in rows:
+        item = dict(r)
+        item["dynamic_params"] = json.loads(item["dynamic_params"])
+        result.append(item)
+    return result
+
+def update_custom_mode(mode_id, **kwargs):
+    """Update a custom mode."""
+    conn = get_conn()
+    if "dynamic_params" in kwargs:
+        kwargs["dynamic_params"] = json.dumps(kwargs["dynamic_params"])
+    kwargs["updated_at"] = datetime.now().isoformat()
+    sets = ", ".join(f"{k}=?" for k in kwargs)
+    conn.execute(f"UPDATE custom_modes SET {sets} WHERE id=?", (*kwargs.values(), mode_id))
+    conn.commit()
+    conn.close()
+
+def delete_custom_mode(mode_id):
+    """Soft delete (disable) a custom mode."""
+    conn = get_conn()
+    conn.execute("UPDATE custom_modes SET enabled=0, updated_at=? WHERE id=?",
+                 (datetime.now().isoformat(), mode_id))
+    conn.commit()
+    conn.close()
 
 # Database will be initialized in app startup, not at import time
 # This prevents initialization errors during module import

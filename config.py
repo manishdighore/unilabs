@@ -25,6 +25,25 @@ DEFAULT_REPORT_FREQUENCY = "quarterly"
 QUARTERLY_SCHEDULE = {"day_of_week": "mon", "hour": 10, "minute": 0}  # First Monday of each quarter
 MONTHLY_SCHEDULE = {"day": "1", "hour": "9", "minute": "0"}  # First day of every month at 9 AM
 
+# --- Month Configuration -------
+MONTHS = [
+    {"code": 1, "name": "January", "quarter": 1},
+    {"code": 2, "name": "February", "quarter": 1},
+    {"code": 3, "name": "March", "quarter": 1},
+    {"code": 4, "name": "April", "quarter": 2},
+    {"code": 5, "name": "May", "quarter": 2},
+    {"code": 6, "name": "June", "quarter": 2},
+    {"code": 7, "name": "July", "quarter": 3},
+    {"code": 8, "name": "August", "quarter": 3},
+    {"code": 9, "name": "September", "quarter": 3},
+    {"code": 10, "name": "October", "quarter": 4},
+    {"code": 11, "name": "November", "quarter": 4},
+    {"code": 12, "name": "December", "quarter": 4},
+]
+
+# Month to quarter mapping for backwards compatibility
+MONTH_TO_QUARTER = {m["code"]: m["quarter"] for m in MONTHS}
+
 COUNTRIES = [
     {"code": "NL", "name": "Netherlands"}, {"code": "CH", "name": "Switzerland"},
     {"code": "CEE", "name": "Central & Eastern Europe"}, {"code": "PT", "name": "Portugal"},
