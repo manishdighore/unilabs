@@ -179,11 +179,11 @@ const AgentCard = ({agent, status, enabled, onToggle, onExpand, expanded}) => {
           <div className="slide-in" style={{marginTop:10,padding:12,borderRadius:10,background:'var(--bg-secondary)',
                                             border:'1px solid var(--border)',fontSize:12,lineHeight:1.6}}>
             <div style={{marginBottom:8}}>
-              <span style={{color:'var(--navy)',fontWeight:600}}>Agent A (Unilabs Position):</span>
+              <span style={{color:'var(--navy)',fontWeight:600}}>Unilabs Research:</span>
               <span style={{color:'var(--text-secondary)',marginLeft:6}}>{agent.agentA}</span>
             </div>
             <div style={{marginBottom:8}}>
-              <span style={{color:'var(--navy)',fontWeight:600}}>Agent B (Competitor Moves):</span>
+              <span style={{color:'var(--navy)',fontWeight:600}}>Competitor Intelligence:</span>
               <span style={{color:'var(--text-secondary)',marginLeft:6}}>{agent.agentB}</span>
             </div>
             <div style={{padding:'6px 10px',borderRadius:8,background:'var(--purple-light)',
@@ -631,13 +631,13 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}/>
             </div>
             <div>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--navy)',marginBottom:5,display:'block'}}>Agent A Focus (Unilabs position) *</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--navy)',marginBottom:5,display:'block'}}>Unilabs Research Focus *</label>
               <textarea value={form.agentA} onChange={e=>setForm(f=>({...f,agentA:e.target.value}))}
                 placeholder="e.g. Analyse Unilabs patient satisfaction scores, NPS data, and service quality vs. competitor benchmarks across markets."
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
             </div>
             <div>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--teal)',marginBottom:5,display:'block'}}>Agent B Focus (Competitor moves) *</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--teal)',marginBottom:5,display:'block'}}>Competitor Intelligence Focus *</label>
               <textarea value={form.agentB} onChange={e=>setForm(f=>({...f,agentB:e.target.value}))}
                 placeholder="e.g. Track how competitors are investing in digital booking, patient portals, and service quality improvements."
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
@@ -694,8 +694,8 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginTop:16}}>
-                {[{label:'Agent A (Unilabs)',desc:agent.agentA,color:'var(--navy)',bg:'var(--navy-light)',bd:'rgba(0,51,102,.12)'},
-                  {label:'Agent B (Competitors)',desc:agent.agentB,color:'var(--teal)',bg:'var(--teal-light)',bd:'var(--teal-medium)'},
+                {[{label:'Unilabs Research',desc:agent.agentA,color:'var(--navy)',bg:'var(--navy-light)',bd:'rgba(0,51,102,.12)'},
+                  {label:'Competitor Intelligence',desc:agent.agentB,color:'var(--teal)',bg:'var(--teal-light)',bd:'var(--teal-medium)'},
                   {label:'CI Validator',desc:'Merges competitive insights, ensures Unilabs vs competitor framing, flags unverified claims, produces competitive implications.',
                    color:'var(--purple)',bg:'var(--purple-light)',bd:'rgba(124,58,237,.12)'}
                 ].map((col,j)=>(
