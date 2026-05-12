@@ -205,11 +205,25 @@ async def trigger_run(config: RunConfig, background_tasks: BackgroundTasks):
 
 
 async def _execute_run_bg(run_id, config, openai_key):
-    agent_map = {a["id"]: a for a in AGENTS}
+    # Build full agent list: built-in + custom agents from DB
+    custom_agents_db = db.list_custom_agents()
+    custom_agents = [
+        {
+            "id": c["agent_key"],
+            "title": c["title"],
+            "category": c["category"],
+            "color": c["color"],
+            "agentA": c["agent_a_prompt"],
+            "agentB": c["agent_b_prompt"],
+        }
+        for c in custom_agents_db
+    ]
+    all_agents = AGENTS + custom_agents
+    agent_map = {a["id"]: a for a in all_agents}
     enabled = config.get("enabled_agents")
 
     out_ids = {}
-    for a in AGENTS:
+    for a in all_agents:
         if enabled and a["id"] not in enabled:
             continue
         out_ids[a["id"]] = db.create_agent_output(run_id, a["id"], a["title"])
@@ -220,7 +234,8 @@ async def _execute_run_bg(run_id, config, openai_key):
 
     try:
         results = await execute_full_run(config, openai_key,
-                                         enabled_ids=enabled, on_status=on_status)
+                                         enabled_ids=enabled, on_status=on_status,
+                                         extra_agents=custom_agents)
     except Exception as e:
         db.update_run(run_id, status="error", summary=str(e))
         return

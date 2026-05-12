@@ -196,9 +196,10 @@ async def run_single_agent(client, agent, config, openai_key, on_status=None):
 # ====================================================================
 # FULL RUN -- ALL ENABLED AGENTS IN BATCHES
 # ====================================================================
-async def execute_full_run(config, openai_key, enabled_ids=None, on_status=None):
+async def execute_full_run(config, openai_key, enabled_ids=None, on_status=None, extra_agents=None):
     """Run all enabled agents in batches. Returns list of result dicts."""
-    agents = [a for a in AGENTS if not enabled_ids or a["id"] in enabled_ids]
+    all_agents = AGENTS + (extra_agents or [])
+    agents = [a for a in all_agents if not enabled_ids or a["id"] in enabled_ids]
     results = []
 
     async with httpx.AsyncClient() as client:
