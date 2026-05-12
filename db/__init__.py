@@ -55,11 +55,15 @@ def init_db():
         severity        TEXT    DEFAULT 'info',
         read            INTEGER DEFAULT 0
     );
-    CREATE TABLE IF NOT EXISTS custom_modes (
+    CREATE TABLE IF NOT EXISTS custom_agents (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        mode_name       TEXT    NOT NULL UNIQUE,
+        agent_key       TEXT    NOT NULL UNIQUE,
+        title           TEXT    NOT NULL,
+        category        TEXT    NOT NULL DEFAULT 'custom',
+        color           TEXT    NOT NULL DEFAULT '#7c3aed',
+        agent_a_prompt  TEXT    NOT NULL,
+        agent_b_prompt  TEXT    NOT NULL,
         description     TEXT,
-        dynamic_params  TEXT    NOT NULL,
         created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
         updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
         enabled         INTEGER DEFAULT 1
@@ -153,67 +157,48 @@ def list_alerts(limit=100, unread_only=False):
     conn.close()
     return [dict(r) for r in rows]
 
-# --- Custom Modes ---------------------------------------------------------
-def create_custom_mode(mode_name, description, dynamic_params):
-    """Create a custom mode with dynamic analysis parameters.
-    
-    Args:
-        mode_name: Unique name for the custom mode
-        description: Human-readable description
-        dynamic_params: Dict with keys like focus_area, key_questions, etc.
-    
-    Returns: mode_id
-    """
+# --- Custom Agents -------------------------------------------------------
+def create_custom_agent(title, agent_a_prompt, agent_b_prompt, description="", category="custom", color="#7c3aed"):
+    """Create a custom agent beyond the built-in 22."""
+    import re, time
+    agent_key = "custom-" + re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-') + "-" + str(int(time.time()))[-4:]
     conn = get_conn()
     cur = conn.execute(
-        "INSERT INTO custom_modes(mode_name, description, dynamic_params) VALUES(?,?,?)",
-        (mode_name, description, json.dumps(dynamic_params)))
-    mode_id = cur.lastrowid
+        "INSERT INTO custom_agents(agent_key, title, category, color, agent_a_prompt, agent_b_prompt, description) VALUES(?,?,?,?,?,?,?)",
+        (agent_key, title, category, color, agent_a_prompt, agent_b_prompt, description))
+    agent_id = cur.lastrowid
     conn.commit()
     conn.close()
-    return mode_id
+    return {"id": agent_id, "agent_key": agent_key}
 
-def get_custom_mode(mode_id):
-    """Get a custom mode by ID."""
+def get_custom_agent(agent_id):
+    """Get a custom agent by DB id."""
     conn = get_conn()
-    row = conn.execute("SELECT * FROM custom_modes WHERE id=?", (mode_id,)).fetchone()
+    row = conn.execute("SELECT * FROM custom_agents WHERE id=?", (agent_id,)).fetchone()
     conn.close()
-    if row:
-        result = dict(row)
-        result["dynamic_params"] = json.loads(result["dynamic_params"])
-        return result
-    return None
+    return dict(row) if row else None
 
-def list_custom_modes(limit=50):
-    """List all custom modes."""
+def list_custom_agents():
+    """List all enabled custom agents."""
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM custom_modes WHERE enabled=1 ORDER BY id DESC LIMIT ?",
-        (limit,)).fetchall()
+    rows = conn.execute("SELECT * FROM custom_agents WHERE enabled=1 ORDER BY id ASC").fetchall()
     conn.close()
-    result = []
-    for r in rows:
-        item = dict(r)
-        item["dynamic_params"] = json.loads(item["dynamic_params"])
-        result.append(item)
-    return result
+    return [dict(r) for r in rows]
 
-def update_custom_mode(mode_id, **kwargs):
-    """Update a custom mode."""
+def update_custom_agent(agent_id, **kwargs):
+    """Update a custom agent."""
     conn = get_conn()
-    if "dynamic_params" in kwargs:
-        kwargs["dynamic_params"] = json.dumps(kwargs["dynamic_params"])
     kwargs["updated_at"] = datetime.now().isoformat()
     sets = ", ".join(f"{k}=?" for k in kwargs)
-    conn.execute(f"UPDATE custom_modes SET {sets} WHERE id=?", (*kwargs.values(), mode_id))
+    conn.execute(f"UPDATE custom_agents SET {sets} WHERE id=?", (*kwargs.values(), agent_id))
     conn.commit()
     conn.close()
 
-def delete_custom_mode(mode_id):
-    """Soft delete (disable) a custom mode."""
+def delete_custom_agent(agent_id):
+    """Soft delete a custom agent."""
     conn = get_conn()
-    conn.execute("UPDATE custom_modes SET enabled=0, updated_at=? WHERE id=?",
-                 (datetime.now().isoformat(), mode_id))
+    conn.execute("UPDATE custom_agents SET enabled=0, updated_at=? WHERE id=?",
+                 (datetime.now().isoformat(), agent_id))
     conn.commit()
     conn.close()
 

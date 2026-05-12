@@ -40,18 +40,21 @@ class RunConfig(BaseModel):
     language: str = "en"
     enabled_agents: Optional[List[str]] = None
     report_frequency: str = "quarterly"
-    custom_mode_id: Optional[int] = None
-    dynamic_params: Optional[dict] = None
 
-class CustomModeCreate(BaseModel):
-    mode_name: str
+class CustomAgentCreate(BaseModel):
+    title: str
+    agent_a_prompt: str
+    agent_b_prompt: str
     description: Optional[str] = ""
-    dynamic_params: dict  # {focus_area, specific_threats, analysis_angle, key_questions}
+    category: Optional[str] = "custom"
+    color: Optional[str] = "#7c3aed"
 
-class CustomModeUpdate(BaseModel):
-    mode_name: Optional[str] = None
+class CustomAgentUpdate(BaseModel):
+    title: Optional[str] = None
+    agent_a_prompt: Optional[str] = None
+    agent_b_prompt: Optional[str] = None
     description: Optional[str] = None
-    dynamic_params: Optional[dict] = None
+    color: Optional[str] = None
 
 class ChatMessage(BaseModel):
     message: str
@@ -156,7 +159,23 @@ async def validate_keys(keys: APIKeys):
 # --- Config metadata ------------------------------------------------------
 @app.get("/api/agents")
 def get_agents():
-    return AGENTS
+    """Return built-in 22 agents merged with any saved custom agents."""
+    custom = db.list_custom_agents()
+    custom_as_agents = [
+        {
+            "id": c["agent_key"],
+            "title": c["title"],
+            "category": c["category"],
+            "color": c["color"],
+            "agentA": c["agent_a_prompt"],
+            "agentB": c["agent_b_prompt"],
+            "description": c.get("description", ""),
+            "is_custom": True,
+            "db_id": c["id"],
+        }
+        for c in custom
+    ]
+    return AGENTS + custom_as_agents
 
 @app.get("/api/countries")
 def get_countries():
@@ -348,69 +367,48 @@ def get_alerts(unread_only: bool = False):
     return db.list_alerts(unread_only=unread_only)
 
 
-# --- Custom Modes ---------------------------------------------------------
-@app.post("/api/custom-modes")
-def create_custom_mode(req: CustomModeCreate):
-    """Create a new custom analysis mode with dynamic parameters."""
+# --- Custom Agents --------------------------------------------------------
+@app.post("/api/custom-agents")
+def create_custom_agent(req: CustomAgentCreate):
+    """Create a new custom agent beyond the built-in 22."""
     try:
-        mode_id = db.create_custom_mode(
-            mode_name=req.mode_name,
+        result = db.create_custom_agent(
+            title=req.title,
+            agent_a_prompt=req.agent_a_prompt,
+            agent_b_prompt=req.agent_b_prompt,
             description=req.description,
-            dynamic_params=req.dynamic_params
+            category=req.category,
+            color=req.color,
         )
-        return {
-            "id": mode_id,
-            "mode_name": req.mode_name,
-            "description": req.description,
-            "dynamic_params": req.dynamic_params,
-            "status": "created"
-        }
+        return {**result, "title": req.title, "status": "created"}
     except Exception as e:
-        raise HTTPException(400, f"Failed to create custom mode: {str(e)}")
+        raise HTTPException(400, f"Failed to create custom agent: {str(e)}")
 
-@app.get("/api/custom-modes")
-def list_custom_modes():
-    """List all custom analysis modes."""
-    modes = db.list_custom_modes()
-    return {"modes": modes, "count": len(modes)}
+@app.get("/api/custom-agents")
+def list_custom_agents():
+    """List all saved custom agents."""
+    agents = db.list_custom_agents()
+    return {"agents": agents, "count": len(agents)}
 
-@app.get("/api/custom-modes/{mode_id}")
-def get_custom_mode(mode_id: int):
-    """Get a specific custom mode."""
-    mode = db.get_custom_mode(mode_id)
-    if not mode:
-        raise HTTPException(404, "Custom mode not found")
-    return mode
-
-@app.put("/api/custom-modes/{mode_id}")
-def update_custom_mode(mode_id: int, req: CustomModeUpdate):
-    """Update a custom mode."""
-    mode = db.get_custom_mode(mode_id)
-    if not mode:
-        raise HTTPException(404, "Custom mode not found")
-    
-    updates = {}
-    if req.mode_name:
-        updates["mode_name"] = req.mode_name
-    if req.description:
-        updates["description"] = req.description
-    if req.dynamic_params:
-        updates["dynamic_params"] = req.dynamic_params
-    
+@app.put("/api/custom-agents/{agent_id}")
+def update_custom_agent(agent_id: int, req: CustomAgentUpdate):
+    """Update a custom agent."""
+    agent = db.get_custom_agent(agent_id)
+    if not agent:
+        raise HTTPException(404, "Custom agent not found")
+    updates = {k: v for k, v in req.model_dump().items() if v is not None}
     if updates:
-        db.update_custom_mode(mode_id, **updates)
-    
-    return db.get_custom_mode(mode_id)
+        db.update_custom_agent(agent_id, **updates)
+    return db.get_custom_agent(agent_id)
 
-@app.delete("/api/custom-modes/{mode_id}")
-def delete_custom_mode(mode_id: int):
-    """Delete (disable) a custom mode."""
-    mode = db.get_custom_mode(mode_id)
-    if not mode:
-        raise HTTPException(404, "Custom mode not found")
-    
-    db.delete_custom_mode(mode_id)
-    return {"status": "deleted", "mode_id": mode_id}
+@app.delete("/api/custom-agents/{agent_id}")
+def delete_custom_agent(agent_id: int):
+    """Delete (disable) a custom agent."""
+    agent = db.get_custom_agent(agent_id)
+    if not agent:
+        raise HTTPException(404, "Custom agent not found")
+    db.delete_custom_agent(agent_id)
+    return {"status": "deleted", "agent_id": agent_id}
 
 
 # --- Chat Agent -----------------------------------------------------------

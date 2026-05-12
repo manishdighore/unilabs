@@ -80,7 +80,7 @@ def _sys_prompt(agent, config, focus):
     competitors = config.get("competitors", []) + [c for c in config.get("custom_competitors", []) if c]
     comp_list = ", ".join(competitors) if competitors else "all major European diagnostics competitors"
 
-    base_prompt = f"""You are a senior competitive intelligence analyst writing for Unilabs executive leadership.
+    return f"""You are a senior competitive intelligence analyst writing for Unilabs executive leadership.
 Unilabs operates diagnostic labs, pathology, radiology, and genetics services across NL, CH, CEE, PT, UAE, NO, SE, FI, DK, UK, FR.
 
 YOUR PRIMARY MISSION: Every insight MUST be framed as "Unilabs vs. competitors".
@@ -103,30 +103,6 @@ RULES:
 - EU/European focus aligned with Unilabs markets.
 - Cite sources where possible.
 - End with a "Competitive Implications for Unilabs" subsection.{lang_note}"""
-
-    # If custom mode with dynamic parameters, inject them
-    if "dynamic_params" in config:
-        params = config["dynamic_params"]
-        custom_context = "\n\n=== CUSTOM ANALYSIS CONTEXT ===\n"
-        
-        if params.get("focus_area"):
-            custom_context += f"PRIMARY FOCUS: {params['focus_area']}\n"
-        
-        if params.get("specific_threats"):
-            threats = ", ".join(params["specific_threats"])
-            custom_context += f"KEY CONCERNS/THREATS: {threats}\n"
-        
-        if params.get("analysis_angle"):
-            custom_context += f"ANALYSIS ANGLE: {params['analysis_angle']}\n"
-        
-        if params.get("key_questions"):
-            custom_context += "CRITICAL QUESTIONS TO ANSWER:\n"
-            for q in params["key_questions"]:
-                custom_context += f"  • {q}\n"
-        
-        return base_prompt + custom_context
-    
-    return base_prompt
 
 
 def _user_prompt(agent, config):
