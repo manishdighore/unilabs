@@ -618,35 +618,56 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
               style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)'}}><Icons.x size={16}/></button>
           </div>
           <div style={{padding:'20px 22px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+            {/* How it works banner */}
+            <div style={{gridColumn:'1/-1',padding:'10px 14px',borderRadius:10,background:'rgba(124,58,237,.06)',
+              border:'1px solid rgba(124,58,237,.15)',display:'flex',gap:10,alignItems:'flex-start'}}>
+              <Icons.zap size={14} color="var(--purple)" style={{flexShrink:0,marginTop:2}}/>
+              <p style={{fontSize:11,color:'var(--text-secondary)',lineHeight:1.6,margin:0}}>
+                Each custom agent runs <strong>two parallel GPT-4o searches</strong> — one focused on Unilabs, one on competitors — then a <strong>CI Validator</strong> merges the findings into a report section. You only need to define the two research directions below.
+              </p>
+            </div>
+
             <div style={{gridColumn:'1/-1'}}>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:5,display:'block'}}>Agent Title *</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:4,display:'block'}}>Agent Title *</label>
               <input value={form.title} onChange={e=>setForm(f=>({...f,title:e.target.value}))}
                 placeholder="e.g. Patient Experience & NPS Benchmarking"
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}/>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>The name that will appear on the agent card and in reports.</p>
             </div>
+
             <div style={{gridColumn:'1/-1'}}>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:5,display:'block'}}>Description</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)',marginBottom:4,display:'block'}}>Description <span style={{fontWeight:400}}>(optional)</span></label>
               <input value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}
-                placeholder="Brief description of what this agent analyses"
+                placeholder="e.g. Monitors patient satisfaction scores and quality perception vs rivals"
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none'}}/>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>One-line summary shown under the title in the agent card.</p>
             </div>
+
             <div>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--navy)',marginBottom:5,display:'block'}}>Unilabs Research Focus *</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--navy)',marginBottom:4,display:'block'}}>
+                Unilabs Research Focus *
+              </label>
               <textarea value={form.agentA} onChange={e=>setForm(f=>({...f,agentA:e.target.value}))}
                 placeholder="e.g. Analyse Unilabs patient satisfaction scores, NPS data, and service quality vs. competitor benchmarks across markets."
-                style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
+                style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid rgba(0,51,102,.25)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI what to research <strong>about Unilabs</strong> — its position, metrics, or strengths in this area.</p>
             </div>
+
             <div>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--teal)',marginBottom:5,display:'block'}}>Competitor Intelligence Focus *</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--teal)',marginBottom:4,display:'block'}}>
+                Competitor Intelligence Focus *
+              </label>
               <textarea value={form.agentB} onChange={e=>setForm(f=>({...f,agentB:e.target.value}))}
                 placeholder="e.g. Track how competitors are investing in digital booking, patient portals, and service quality improvements."
-                style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid var(--border)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
+                style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid rgba(0,163,224,.25)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI what to research <strong>about competitors</strong> — their moves, investments, or gaps in this area.</p>
             </div>
+
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)'}}>Colour:</label>
+              <label style={{fontSize:10,fontWeight:600,color:'var(--text-muted)'}}>Card Colour:</label>
               <input type="color" value={form.color} onChange={e=>setForm(f=>({...f,color:e.target.value}))}
                 style={{width:40,height:32,borderRadius:6,border:'1px solid var(--border)',cursor:'pointer',padding:2}}/>
-              <span style={{fontSize:10,color:'var(--text-muted)'}}>{form.color}</span>
+              <span style={{fontSize:10,color:'var(--text-muted)'}}>Used for the card's top stripe and icon.</span>
             </div>
             <div style={{display:'flex',gap:8,alignItems:'flex-end',justifyContent:'flex-end'}}>
               <button onClick={()=>setShowCreate(false)}
