@@ -12,8 +12,8 @@ from config import AGENTS, BATCH_SIZE, LANGUAGES
 log = logging.getLogger("agents")
 
 # ── Model configuration (hardcoded — change here to switch models) ─────────
-SEARCH_MODEL    = "gpt-4o"   # Research agents: Responses API + web_search_preview
-VALIDATOR_MODEL = "gpt-4o"   # CI Validator:    Responses API, synthesis only
+SEARCH_MODEL    = "gpt-5.5"   # Research agents: Responses API + web_search_preview
+VALIDATOR_MODEL = "gpt-5.5"   # CI Validator:    Responses API, synthesis only
 # ──────────────────────────────────────────────────────────────────────────
 
 
