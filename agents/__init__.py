@@ -92,10 +92,14 @@ OUTPUT REQUIREMENTS:
 - Every paragraph must name at least one competitor and compare to Unilabs explicitly
 - Include hard metrics wherever found: revenue (€M), growth %, lab counts, deal values, headcount, contract durations
 - HTML structure: <h4> for subsections, <p> for body, <strong> for key data, <ul><li> for lists
-- Cite source name + approximate date inline: e.g. <em>(Synlab Annual Report, March 2026)</em>
+- Cite EVERY claim with a clickable hyperlink — format: <a href="[URL]" target="_blank" rel="noopener">[Source Name, Month Year]</a>
+  Example: <a href="https://www.synlab.com/investors/annual-report-2025" target="_blank" rel="noopener">(Synlab Annual Report, March 2026)</a>
+- If the URL is not available, still cite: <em>[Source Name, Month Year — URL unavailable]</em>
+- Include a REFERENCES section at the bottom listing all cited URLs as a numbered <ol> with <a href> links
 - Highlight THREATS: wrap in <strong class="threat"> ... </strong>
 - Highlight OPPORTUNITIES: wrap in <strong class="opportunity"> ... </strong>
 - End with: <div class="ci-implications"><h4>Competitive Implications for Unilabs</h4><ul> followed by 5–6 specific, actionable bullets
+- Then: <div class="references"><h4>References</h4><ol> with each source as <li><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> — [publisher, date]</li>
 - Executive tone, third person, data-driven, no generic market filler{lang_note}"""
 
 
@@ -129,9 +133,11 @@ WRITING CHECKLIST (all items required):
 ☑ Dedicated paragraph or sub-section per competitor (or explicit "no activity" block)
 ☑ Unilabs vs. each competitor: who is ahead, behind, or at parity — with evidence
 ☑ Quantitative data wherever available (€, %, lab counts, deal sizes)
-☑ Sources cited inline with publication name and date
+☑ Every claim cited with a clickable <a href> link to the source URL
+☑ All source URLs collected in a numbered References list at the bottom
 ☑ Threats and opportunities marked with the correct HTML class
 ☑ "Competitive Implications for Unilabs" section with 5–6 actionable bullets
+☑ References section (<div class="references">) with numbered clickable links
 
 Period: {years} {periods} | Markets: {geo}"""
 
@@ -154,7 +160,9 @@ YOUR TASKS:
 5. Strengthen quantitative claims — prefer exact figures over vague language
 6. Ensure "Competitive Implications for Unilabs" has 5–6 specific, actionable bullets
 7. Preserve <strong class="threat"> and <strong class="opportunity"> markup
-8. Append this block at the very end:
+8. Consolidate all hyperlinked citations from both versions — keep every <a href> link that points to a real URL; remove any dead placeholder links
+9. Produce a merged References section: <div class="references"><h4>References</h4><ol> with deduplicated, numbered <li><a href="[URL]" target="_blank" rel="noopener">[Title]</a> — [Publisher, Date]</li> entries
+10. Append this block at the very end:
 <div class="validation-note">
   <strong>Validation Summary</strong>
   <ul>
@@ -163,6 +171,7 @@ YOUR TASKS:
     <li>Version agreement score: [X]%</li>
     <li>Confidence by competitor: [CompetitorName: High/Medium/Low/No Data, ...]</li>
     <li>Overall section confidence: [High/Medium/Low]</li>
+    <li>Total references included: [N] links</li>
   </ul>
 </div>
 
