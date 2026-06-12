@@ -144,7 +144,7 @@ const AgentCard = ({agent, status, enabled, onToggle, onExpand, expanded}) => {
               <h3 style={{fontSize:13,fontWeight:700,color:'var(--text-primary)',lineHeight:1.3}}>{agent.title}</h3>
             </div>
             <div style={{display:'flex',gap:5,flexWrap:'wrap',marginTop:8}}>
-              {['GPT-4o A','GPT-4o B'].map(l=>(
+              {['Agent A','Agent B'].map(l=>(
                 <span key={l} style={{fontSize:9,padding:'2px 8px',borderRadius:6,background:'var(--green-light)',
                   color:'var(--green)',fontWeight:700,letterSpacing:'.3px'}}>{l}</span>
               ))}
@@ -208,18 +208,21 @@ const AgentCard = ({agent, status, enabled, onToggle, onExpand, expanded}) => {
    =================================================================== */
 const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
   const [openaiKey, setOpenaiKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
+  const [provider, setProvider] = useState(keysStatus.provider || "auto");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [validating, setValidating] = useState(false);
   const [valResults, setValResults] = useState(null);
   const [showOai, setShowOai] = useState(false);
+  const [showAnthropic, setShowAnthropic] = useState(false);
 
   const handleSave = async () => {
-    if(!openaiKey) return;
+    if(!openaiKey && !anthropicKey && provider === (keysStatus.provider || "auto")) return;
     setSaving(true);
-    await onSaveKeys(openaiKey);
+    await onSaveKeys({openaiKey, anthropicKey, provider});
     setSaving(false); setSaved(true);
-    setOpenaiKey(""); setValResults(null);
+    setOpenaiKey(""); setAnthropicKey(""); setValResults(null);
     setTimeout(()=>setSaved(false),2000);
   };
 
@@ -228,6 +231,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
     try {
       const body = {};
       if(openaiKey) body.openai_key = openaiKey;
+      if(anthropicKey) body.anthropic_key = anthropicKey;
       const resp = await fetch('/api/keys/validate',{method:'POST',
         headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
       setValResults(await resp.json());
@@ -259,6 +263,27 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
           <div style={{marginBottom:20}}>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
               <label style={{fontSize:13,fontWeight:700,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:8}}>
+                <div style={{width:24,height:24,borderRadius:6,background:'var(--purple-light)',
+                             display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <Icons.zap size={13} color="var(--purple)"/>
+                </div>
+                AI Provider
+              </label>
+              {keysStatus.active_provider && <span style={{fontSize:10,padding:'3px 8px',borderRadius:6,
+                background:'var(--navy-light)',color:'var(--navy)',fontWeight:600}}>
+                ACTIVE: {keysStatus.active_provider.toUpperCase()}
+              </span>}
+            </div>
+            <select value={provider} onChange={e=>setProvider(e.target.value)}
+              style={{width:'100%',padding:'10px 12px',borderRadius:10,border:'1px solid var(--border)',
+                background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:13,outline:'none',marginBottom:12}}>
+              <option value="auto">Auto - use any configured key</option>
+              <option value="openai">OpenAI only</option>
+              <option value="anthropic">Anthropic only</option>
+            </select>
+
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <label style={{fontSize:13,fontWeight:700,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:8}}>
                 <div style={{width:24,height:24,borderRadius:6,background:'var(--green-light)',
                              display:'flex',alignItems:'center',justifyContent:'center'}}>
                   <Icons.key size={13} color="var(--green)"/>
@@ -269,7 +294,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
                 background:'var(--green-light)',color:'var(--green)',fontWeight:600}}>CONFIGURED</span>}
             </div>
             <p style={{fontSize:11,color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
-              Powers all CI agents: GPT-4o with web search for research + GPT-4o for validation + chat agent.
+              Powers CI agents with OpenAI web search for research, validation, and chat agent.
             </p>
             <div style={{position:'relative'}}>
               <input type={showOai?"text":"password"} value={openaiKey}
@@ -286,11 +311,41 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
             </div>
           </div>
 
+          <div style={{marginBottom:20}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <label style={{fontSize:13,fontWeight:700,color:'var(--text-primary)',display:'flex',alignItems:'center',gap:8}}>
+                <div style={{width:24,height:24,borderRadius:6,background:'var(--purple-light)',
+                             display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <Icons.key size={13} color="var(--purple)"/>
+                </div>
+                Anthropic API Key
+              </label>
+              {keysStatus.anthropic && <span style={{fontSize:10,padding:'3px 8px',borderRadius:6,
+                background:'var(--purple-light)',color:'var(--purple)',fontWeight:600}}>CONFIGURED</span>}
+            </div>
+            <p style={{fontSize:11,color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
+              Optional alternative provider for CI agents and chat. You can configure OpenAI, Anthropic, or both.
+            </p>
+            <div style={{position:'relative'}}>
+              <input type={showAnthropic?"text":"password"} value={anthropicKey}
+                onChange={e=>setAnthropicKey(e.target.value)}
+                placeholder={keysStatus.anthropic?"key saved -- enter new to update":"sk-ant-..."}
+                style={{width:'100%',padding:'12px 44px 12px 14px',borderRadius:10,
+                  border:`1px solid ${keysStatus.anthropic?'rgba(124,58,237,.3)':'var(--border)'}`,
+                  background:'var(--bg-secondary)',color:'var(--text-primary)',fontSize:13,fontFamily:'monospace',outline:'none'}}/>
+              <button onClick={()=>setShowAnthropic(!showAnthropic)} style={{position:'absolute',right:12,top:'50%',
+                transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',
+                color:'var(--text-muted)',display:'flex'}}>
+                {showAnthropic ? <Icons.eyeOff size={16}/> : <Icons.eye size={16}/>}
+              </button>
+            </div>
+          </div>
+
           {/* Pipeline diagram */}
           <div style={{padding:14,borderRadius:12,background:'var(--bg-secondary)',border:'1px solid var(--border)',marginBottom:18}}>
             <p style={{fontSize:10,fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:10}}>CI Pipeline</p>
             <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,flexWrap:'wrap'}}>
-              {[{label:'GPT-4o A + Search',color:'var(--green)'},{label:'GPT-4o B + Search',color:'var(--green)'},
+              {[{label:'Agent A + Search',color:'var(--green)'},{label:'Agent B + Search',color:'var(--green)'},
                 {label:'\u2192',color:'var(--text-muted)',isSep:true},
                 {label:'CI Validator',color:'var(--purple)'}].map((n,i)=>(
                 n.isSep ? <span key={i} style={{fontSize:18,color:n.color,fontWeight:300}}>{n.label}</span> :
@@ -310,20 +365,30 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
               </span>
             </div>
           )}
+          {valResults && !valResults.error && valResults.anthropic && (
+            <div style={{marginBottom:14,padding:'10px 14px',borderRadius:10,display:'flex',alignItems:'center',gap:8,
+              background:valResults.anthropic.valid?'var(--purple-light)':'#fef2f2',
+              border:`1px solid ${valResults.anthropic.valid?'rgba(124,58,237,.2)':'rgba(220,38,38,.2)'}`}}>
+              {valResults.anthropic.valid ? <Icons.check size={14} color="var(--purple)"/> : <Icons.alert size={14} color="#dc2626"/>}
+              <span style={{fontSize:11,fontWeight:700,color:valResults.anthropic.valid?'var(--purple)':'#dc2626'}}>
+                Anthropic: {valResults.anthropic.valid?'Valid':'Invalid'}
+              </span>
+            </div>
+          )}
 
           <div style={{display:'flex',gap:10}}>
-            <button onClick={handleValidate} disabled={validating||(!openaiKey&&!keysStatus.openai)}
+            <button onClick={handleValidate} disabled={validating||(!openaiKey&&!anthropicKey&&!keysStatus.openai&&!keysStatus.anthropic)}
               style={{flex:1,padding:'12px',borderRadius:12,border:'1px solid var(--border)',cursor:'pointer',
                 fontWeight:700,fontSize:13,color:'var(--text-primary)',background:'white',
-                opacity:(validating||(!openaiKey&&!keysStatus.openai))?0.5:1,
+                opacity:(validating||(!openaiKey&&!anthropicKey&&!keysStatus.openai&&!keysStatus.anthropic))?0.5:1,
                 display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               {validating ? <><Spinner size={14}/> Testing...</> : <><Icons.shield size={14}/> Test Key</>}
             </button>
-            <button onClick={handleSave} disabled={saving||!openaiKey}
+            <button onClick={handleSave} disabled={saving||(!openaiKey&&!anthropicKey&&provider===(keysStatus.provider||"auto"))}
               style={{flex:1,padding:'12px',borderRadius:12,border:'none',cursor:'pointer',
                 fontWeight:700,fontSize:13,color:'white',
                 background:saved?'var(--green)':'var(--gradient-brand)',
-                opacity:(saving||!openaiKey)?0.5:1,
+                opacity:(saving||(!openaiKey&&!anthropicKey&&provider===(keysStatus.provider||"auto")))?0.5:1,
                 display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
               {saving ? <><Spinner size={14} color="white"/> Saving...</> :
                saved ? <><Icons.check size={14} color="white"/> Saved!</> :
@@ -471,7 +536,7 @@ const RunConfigPanel = ({agents, countries, languages, competitors, enabledAgent
           {running?<><Spinner size={16} color="white"/> Running {enabledAgents.length} Agents...</>
                   :<><Icons.target size={16} color="white"/> Launch {enabledAgents.length} CI Agents</>}
         </button>
-        {!keysOk && <p style={{textAlign:'center',fontSize:10,color:'#dc2626',marginTop:6}}>Configure OpenAI API key in Admin Settings first</p>}
+        {!keysOk && <p style={{textAlign:'center',fontSize:10,color:'#dc2626',marginTop:6}}>Configure an OpenAI or Anthropic API key in Admin Settings first</p>}
       </div>
     </div>
   );
@@ -589,7 +654,7 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
         <div>
           <h1 style={{fontSize:22,fontWeight:900,color:'var(--navy)',marginBottom:4}}>CI Agent Registry</h1>
           <p style={{fontSize:13,color:'var(--text-muted)'}}>
-            Each module runs two GPT-4o agents with web search focused on Unilabs vs competitors, then a validator merges and verifies the competitive insights.
+            Each module runs two AI agents with web search focused on Unilabs vs competitors, then a validator merges and verifies the competitive insights.
           </p>
         </div>
         <button onClick={()=>setShowCreate(!showCreate)}
@@ -623,7 +688,7 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
               border:'1px solid rgba(124,58,237,.15)',display:'flex',gap:10,alignItems:'flex-start'}}>
               <Icons.zap size={14} color="var(--purple)" style={{flexShrink:0,marginTop:2}}/>
               <p style={{fontSize:11,color:'var(--text-secondary)',lineHeight:1.6,margin:0}}>
-                Each custom agent runs <strong>two parallel GPT-4o searches</strong> — one focused on Unilabs, one on competitors — then a <strong>CI Validator</strong> merges the findings into a report section. You only need to define the two research directions below.
+                Each custom agent runs <strong>two parallel AI searches</strong> — one focused on Unilabs, one on competitors — then a <strong>CI Validator</strong> merges the findings into a report section. You only need to define the two research directions below.
               </p>
             </div>
 
@@ -913,7 +978,7 @@ const ChatPanel = ({onRunStarted, agents}) => {
           <Icons.msgCircle size={18} color="white"/>
           <div>
             <div style={{fontSize:14,fontWeight:800}}>CI Assistant</div>
-            <div style={{fontSize:10,opacity:.8}}>Powered by GPT-4o</div>
+            <div style={{fontSize:10,opacity:.8}}>Powered by configured AI provider</div>
           </div>
         </div>
         <button onClick={()=>setOpen(false)} style={{background:'rgba(255,255,255,.15)',border:'none',
@@ -985,7 +1050,7 @@ const App = () => {
   const [expandedAgent, setExpandedAgent] = useState(null);
   const [agentStatuses, setAgentStatuses] = useState({});
   const [runs, setRuns] = useState([]);
-  const [keysStatus, setKeysStatus] = useState({openai:false});
+  const [keysStatus, setKeysStatus] = useState({openai:false, anthropic:false, provider:"auto", active_provider:null});
   const [showAdmin, setShowAdmin] = useState(false);
   const [running, setRunning] = useState(false);
   const [page, setPage] = useState('dashboard');
@@ -1038,8 +1103,10 @@ const App = () => {
 
   useEffect(()=>()=>{if(pollRef.current)clearInterval(pollRef.current);},[]);
 
-  const saveKeys = async(ok)=>{
-    const body={};if(ok)body.openai_key=ok;
+  const saveKeys = async({openaiKey, anthropicKey, provider})=>{
+    const body={provider};
+    if(openaiKey) body.openai_key=openaiKey;
+    if(anthropicKey) body.anthropic_key=anthropicKey;
     await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     setKeysStatus(await fetch('/api/keys/status').then(r=>r.json()));
   };
@@ -1069,7 +1136,8 @@ const App = () => {
   };
 
   const toggleAgent = id => setEnabledAgents(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
-  const keysOk = keysStatus.openai;
+  const keysOk = keysStatus.openai || keysStatus.anthropic;
+  const providerLabel = keysStatus.active_provider ? keysStatus.active_provider.toUpperCase() : 'NO AI KEY';
 
   const grouped = useMemo(()=>{
     const g={};agents.forEach(a=>{const c=a.category||'other';if(!g[c])g[c]=[];g[c].push(a);});return g;
@@ -1108,7 +1176,7 @@ const App = () => {
               background:keysOk?'var(--green-light)':'#fef2f2',
               color:keysOk?'var(--green)':'#dc2626',
               border:`1px solid ${keysOk?'rgba(5,150,105,.15)':'rgba(220,38,38,.15)'}`}}>
-              GPT-4o {keysOk?'\u2713':'\u2717'}
+              {providerLabel} {keysOk?'\u2713':'\u2717'}
             </span>
             <button onClick={()=>setShowAdmin(true)}
               style={{display:'flex',alignItems:'center',gap:5,padding:'7px 12px',borderRadius:9,

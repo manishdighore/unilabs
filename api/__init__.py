@@ -120,7 +120,6 @@ async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024
                 json={
                     "model": "claude-sonnet-4-6",
                     "max_tokens": max_tokens,
-                    "temperature": temperature,
                     "system": system,
                     "messages": claude_messages,
                 },

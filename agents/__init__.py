@@ -58,7 +58,6 @@ async def call_anthropic(api_key: str, instructions: str, user_input: str, use_w
     body = {
         "model": ANTHROPIC_MODEL,
         "max_tokens": 4096,
-        "temperature": 0.2,
         "system": instructions,
         "messages": [{"role": "user", "content": user_input}],
     }
