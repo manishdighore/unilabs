@@ -16,6 +16,22 @@ log = logging.getLogger("scheduler")
 scheduler = BackgroundScheduler(timezone="Europe/Amsterdam")
 
 
+def _select_ai_provider():
+    provider = (db.get_setting("ai_provider", "auto") or "auto").lower()
+    openai_key = db.get_setting("openai_key", "")
+    anthropic_key = db.get_setting("anthropic_key", "")
+
+    if provider == "openai" and openai_key:
+        return "openai", openai_key
+    if provider == "anthropic" and anthropic_key:
+        return "anthropic", anthropic_key
+    if openai_key:
+        return "openai", openai_key
+    if anthropic_key:
+        return "anthropic", anthropic_key
+    return None, None
+
+
 def _default_config(report_frequency="quarterly"):
     """Config used for scheduled runs."""
     current_month = datetime.now().month
@@ -35,9 +51,9 @@ def _default_config(report_frequency="quarterly"):
 def _run_scheduled(report_frequency="quarterly"):
     """Blocking wrapper for the async pipeline, called by APScheduler."""
     log.info(f"Scheduled competitive intel run triggered ({report_frequency})")
-    openai_key = db.get_setting("openai_key", "")
-    if not openai_key:
-        log.error("Scheduled run aborted -- OpenAI API key not set.")
+    provider, api_key = _select_ai_provider()
+    if not api_key:
+        log.error("Scheduled run aborted -- OpenAI or Anthropic API key not set.")
         return
 
     config = _default_config(report_frequency)
@@ -48,7 +64,7 @@ def _run_scheduled(report_frequency="quarterly"):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         results = loop.run_until_complete(
-            execute_full_run(config, openai_key)
+            execute_full_run(config, api_key, provider=provider)
         )
         loop.close()
     except Exception as e:

@@ -62,6 +62,8 @@ class ChatMessage(BaseModel):
 
 class APIKeys(BaseModel):
     openai_key: Optional[str] = None
+    anthropic_key: Optional[str] = None
+    provider: Optional[str] = None
 
 class SchedulerConfig(BaseModel):
     enabled: Optional[bool] = None
@@ -78,6 +80,77 @@ def on_startup():
     db.init_db()
     start_scheduler()
     log.info("Competitive Intelligence Platform started.")
+
+
+def _select_ai_provider():
+    provider = (db.get_setting("ai_provider", "auto") or "auto").lower()
+    openai_key = db.get_setting("openai_key", "")
+    anthropic_key = db.get_setting("anthropic_key", "")
+
+    if provider == "openai" and openai_key:
+        return "openai", openai_key
+    if provider == "anthropic" and anthropic_key:
+        return "anthropic", anthropic_key
+    if openai_key:
+        return "openai", openai_key
+    if anthropic_key:
+        return "anthropic", anthropic_key
+    return None, None
+
+
+async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024, temperature=0.3):
+    import httpx
+
+    if provider == "anthropic":
+        system = ""
+        claude_messages = []
+        for m in messages:
+            if m.get("role") == "system":
+                system = m.get("content", "")
+            else:
+                claude_messages.append({"role": m.get("role", "user"), "content": m.get("content", "")})
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-sonnet-4-6",
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "system": system,
+                    "messages": claude_messages,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            parts = [
+                b.get("text", "")
+                for b in resp.json().get("content", [])
+                if isinstance(b, dict) and b.get("type") == "text"
+            ]
+            return "\n".join(parts).strip()
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "gpt-4o",
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": messages,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
 
 
 # --- Dashboard ------------------------------------------------------------
@@ -112,19 +185,27 @@ def dashboard():
 def save_keys(keys: APIKeys):
     if keys.openai_key:
         db.set_setting("openai_key", keys.openai_key.strip())
+    if keys.anthropic_key:
+        db.set_setting("anthropic_key", keys.anthropic_key.strip())
+    if keys.provider and keys.provider.lower() in {"auto", "openai", "anthropic"}:
+        db.set_setting("ai_provider", keys.provider.lower())
     return {"status": "saved"}
 
 @app.get("/api/keys/status")
 def keys_status():
+    provider, _ = _select_ai_provider()
     return {
         "openai": bool(db.get_setting("openai_key")),
+        "anthropic": bool(db.get_setting("anthropic_key")),
+        "provider": db.get_setting("ai_provider", "auto"),
+        "active_provider": provider,
     }
 
 @app.post("/api/keys/validate")
 async def validate_keys(keys: APIKeys):
-    """Test OpenAI key against the API before saving."""
+    """Test provided OpenAI and Anthropic keys against their APIs before saving."""
     import httpx
-    results = {"openai": None}
+    results = {"openai": None, "anthropic": None}
 
     async with httpx.AsyncClient() as client:
         ok = (keys.openai_key or "").strip()
@@ -152,6 +233,33 @@ async def validate_keys(keys: APIKeys):
                     results["openai"] = {"valid": False, "message": f"{resp.status_code}: {err}"}
             except Exception as e:
                 results["openai"] = {"valid": False, "message": str(e)[:200]}
+
+        ak = (keys.anthropic_key or "").strip()
+        if not ak:
+            ak = db.get_setting("anthropic_key", "")
+        if ak:
+            try:
+                resp = await client.post(
+                    "https://api.anthropic.com/v1/messages",
+                    headers={
+                        "x-api-key": ak,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                    json={
+                        "model": "claude-sonnet-4-6",
+                        "max_tokens": 10,
+                        "messages": [{"role": "user", "content": "Hi"}],
+                    },
+                    timeout=15,
+                )
+                if resp.status_code == 200:
+                    results["anthropic"] = {"valid": True, "message": "Key is valid"}
+                else:
+                    err = resp.json().get("error", {}).get("message", resp.text[:200])
+                    results["anthropic"] = {"valid": False, "message": f"{resp.status_code}: {err}"}
+            except Exception as e:
+                results["anthropic"] = {"valid": False, "message": str(e)[:200]}
 
     return results
 
@@ -193,18 +301,19 @@ def get_competitors():
 # --- Trigger a run --------------------------------------------------------
 @app.post("/api/runs")
 async def trigger_run(config: RunConfig, background_tasks: BackgroundTasks):
-    openai_key = db.get_setting("openai_key", "")
-    if not openai_key:
-        raise HTTPException(400, "OpenAI API key not set. Go to Admin Settings first.")
+    provider, api_key = _select_ai_provider()
+    if not api_key:
+        raise HTTPException(400, "OpenAI or Anthropic API key not set. Go to Admin Settings first.")
 
     run_id = db.create_run(config.dict(), trigger="manual")
     db.update_run(run_id, status="running")
 
-    background_tasks.add_task(_execute_run_bg, run_id, config.dict(), openai_key)
+    background_tasks.add_task(_execute_run_bg, run_id, config.dict(), api_key, provider)
     return {"run_id": run_id, "status": "started"}
 
 
-async def _execute_run_bg(run_id, config, openai_key):
+async def _execute_run_bg(run_id, config, api_key, provider="openai"):
+    config["ai_provider"] = provider
     # Build full agent list: built-in + custom agents from DB
     custom_agents_db = db.list_custom_agents()
     custom_agents = [
@@ -233,7 +342,7 @@ async def _execute_run_bg(run_id, config, openai_key):
             db.update_agent_output(out_ids[aid], status=status)
 
     try:
-        results = await execute_full_run(config, openai_key,
+        results = await execute_full_run(config, api_key, provider=provider,
                                          enabled_ids=enabled, on_status=on_status,
                                          extra_agents=custom_agents)
     except Exception as e:
@@ -475,12 +584,10 @@ Be concise, helpful, and knowledgeable about competitive intelligence in Europea
 @app.post("/api/chat")
 async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
     """GPT-powered chat agent that interprets user intent and triggers CI runs."""
-    import httpx
-
-    openai_key = db.get_setting("openai_key", "")
-    if not openai_key:
+    provider, api_key = _select_ai_provider()
+    if not api_key:
         return {"action": "reply",
-                "message": "Please configure your OpenAI API key in Admin Settings before using the chat agent."}
+                "message": "Please configure an OpenAI or Anthropic API key in Admin Settings before using the chat agent."}
 
     # Build system prompt with available agents, markets, competitors
     agent_list = "\n".join(f'- {a["id"]}: {a["title"]}' for a in AGENTS)
@@ -496,25 +603,7 @@ async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
     messages.append({"role": "user", "content": msg.message})
 
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {openai_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-4o",
-                    "max_tokens": 1024,
-                    "temperature": 0.3,
-                    "messages": messages,
-                },
-                timeout=30,
-            )
-            if resp.status_code != 200:
-                return {"action": "reply",
-                        "message": f"API error ({resp.status_code}). Please check your OpenAI key."}
-            content = resp.json()["choices"][0]["message"]["content"]
+        content = await _provider_chat_completion(provider, api_key, messages, max_tokens=1024, temperature=0.3)
     except Exception as e:
         return {"action": "reply", "message": f"Connection error: {str(e)[:200]}"}
 
@@ -557,7 +646,7 @@ async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
         # Trigger the run
         run_id = db.create_run(run_config, trigger="chat")
         db.update_run(run_id, status="running")
-        background_tasks.add_task(_execute_run_bg, run_id, run_config, openai_key)
+        background_tasks.add_task(_execute_run_bg, run_id, run_config, api_key, provider)
 
         agent_names = [a["title"] for a in AGENTS if a["id"] in agent_ids]
         friendly_msg = parsed.get("message", f"Launching {len(agent_ids)} CI agents.")

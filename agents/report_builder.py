@@ -17,7 +17,7 @@ def build_html_report(sections, config):
     report_frequency = config.get("report_frequency", "quarterly").upper()
     
     time_label = f"{', '.join(str(y) for y in years)} -- {', '.join(periods)}"
-    geo = "All Markets" if len(countries) >= 11 else ", ".join(countries)
+    geo = "All Markets" if len(countries) >= len(COUNTRIES) else ", ".join(countries)
     comp_label = ", ".join(comps[:5]) + (f" +{len(comps)-5} more" if len(comps) > 5 else "")
 
     # Build section HTML with enhanced styling
@@ -41,7 +41,7 @@ def build_html_report(sections, config):
         <p>{frequency_note} in-depth competitive intelligence across {len(sections)} key modules.</p>
         <p style="margin-top:10px"><strong>Report Type:</strong> {report_frequency} | <strong>Coverage:</strong> {geo}</p>
         <p style="margin-top:10px"><strong>Benchmarked Against:</strong> {comp_label}</p>
-        <p style="margin-top:10px">Each section contains dual-agent analysis with GPT-4o cross-validation to ensure accuracy and actionability.</p>
+        <p style="margin-top:10px">Each section contains dual-agent analysis with AI cross-validation to ensure accuracy and actionability.</p>
       </div>
     </section>
     """
@@ -86,7 +86,7 @@ def build_html_report(sections, config):
       <div><strong style="color:#003366">Markets:</strong> {geo}</div>
       <div><strong style="color:#003366">Benchmarked vs:</strong> {comp_label}</div>
       <div><strong style="color:#003366">Sections:</strong> {len(sections)} Modules</div>
-      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #D1D5DB"><strong style="color:#003366">Validation:</strong> Dual-agent + GPT-4o</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #D1D5DB"><strong style="color:#003366">Validation:</strong> Dual-agent + AI provider</div>
     </div>
   </header>
   <div style="text-align:center;margin-bottom:50px">
@@ -107,7 +107,7 @@ def build_html_report(sections, config):
       <div><strong>Total Agents:</strong> {len(sections)}</div>
       <div><strong>Geographic Coverage:</strong> {len(countries)} markets</div>
       <div><strong>Competitors Analyzed:</strong> {len(comps)} entities</div>
-      <div><strong>Analysis Method:</strong> Dual-agent + GPT-4o validation</div>
+      <div><strong>Analysis Method:</strong> Dual-agent + AI validation</div>
       <div><strong>Confidence Level:</strong> High (cross-verified)</div>
     </div>
   </section>

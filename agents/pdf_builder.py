@@ -15,6 +15,7 @@ from reportlab.platypus import (
 )
 from reportlab.platypus.frames import Frame
 from reportlab.platypus.doctemplate import PageTemplate
+from config import COUNTRIES
 
 
 # --- Colors ---------------------------------------------------------------
@@ -156,7 +157,7 @@ def build_pdf_report(sections, config):
     countries = config.get("countries", [])
     comps = config.get("competitors", []) + [c for c in config.get("custom_competitors", []) if c]
     time_label = f"{', '.join(str(y) for y in years)} -- {', '.join(periods)}"
-    geo = "All Markets" if len(countries) >= 11 else ", ".join(countries)
+    geo = "All Markets" if len(countries) >= len(COUNTRIES) else ", ".join(countries)
     comp_label = ", ".join(comps[:5]) + (f" +{len(comps)-5} more" if len(comps) > 5 else "")
     date_str = datetime.now().strftime("%d %B %Y")
 
@@ -184,7 +185,7 @@ def build_pdf_report(sections, config):
     story.append(Spacer(1, 2*mm))
     story.append(Paragraph(f"Benchmarked vs: {_esc(comp_label)}", styles["meta"]))
     story.append(Spacer(1, 2*mm))
-    story.append(Paragraph("Dual-Agent GPT-4o + Web Search Cross-Validation", styles["meta"]))
+    story.append(Paragraph("Dual-Agent AI + Web Search Cross-Validation", styles["meta"]))
 
     story.append(Spacer(1, 12*mm))
     story.append(HRFlowable(width="80%", thickness=1, color=RED, spaceAfter=8*mm))

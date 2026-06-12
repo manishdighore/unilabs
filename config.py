@@ -46,11 +46,12 @@ MONTH_TO_QUARTER = {m["code"]: m["quarter"] for m in MONTHS}
 
 COUNTRIES = [
     {"code": "NL", "name": "Netherlands"}, {"code": "CH", "name": "Switzerland"},
-    {"code": "CEE", "name": "Central & Eastern Europe"}, {"code": "PT", "name": "Portugal"},
+    {"code": "CZ", "name": "Czech Republic"}, {"code": "SK", "name": "Slovakia"},
+    {"code": "PT", "name": "Portugal"},
     {"code": "UAE", "name": "UAE"}, {"code": "NO", "name": "Norway"},
     {"code": "SE", "name": "Sweden"}, {"code": "FI", "name": "Finland"},
     {"code": "DK", "name": "Denmark"}, {"code": "UK", "name": "United Kingdom"},
-    {"code": "FR", "name": "France"},
+    {"code": "FR", "name": "France"}, {"code": "US", "name": "United States"},
 ]
 
 DEFAULT_COMPETITORS = [
@@ -108,7 +109,7 @@ AGENTS = [
 
     {"id": "geographic-battleground", "title": "Geographic Battleground Analysis",
      "category": "core", "color": "#00A3E0",
-     "agentA": "Map competitor presence vs Unilabs in each of the 11 operating markets: lab density, new openings, closures, and expansion signals.",
+     "agentA": "Map competitor presence vs Unilabs in each operating market: lab density, new openings, closures, and expansion signals.",
      "agentB": "Identify geographic markets where Unilabs faces rising competitive pressure and markets where Unilabs has defensible advantages."},
 
     {"id": "customer-win-loss",       "title": "Customer Win/Loss Intelligence",

@@ -23,7 +23,7 @@ from api import app  # noqa — imports the FastAPI app
 if __name__ == "__main__":
     print("\n" + "="*60)
     print("  Unilabs Competitive Intelligence Platform")
-    print("  22 CI Agents | GPT-4o + Web Search | Cross-Validation")
+    print("  22 CI Agents | OpenAI/Anthropic + Web Search | Cross-Validation")
     print("="*60)
     print("  Dashboard:  http://localhost:8001")
     print("  API docs:   http://localhost:8001/docs")
