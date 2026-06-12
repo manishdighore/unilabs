@@ -126,19 +126,21 @@ This may indicate a strategic pause, private execution, or limited public disclo
 <em>Recommendation: Unilabs should monitor this competitor closely for delayed announcements.</em></div>
 
 OUTPUT REQUIREMENTS:
-- Start with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div> summarizing what is publicly known about Unilabs in this section and selected markets before comparing competitors
-- 700–1000 words of substantive, specific competitive analysis
-- Every paragraph must name at least one competitor and compare to Unilabs explicitly
+- Write for busy executives: concise, skimmable, and focused on a quick overview of current market standing, not a long chronology of minor updates.
+- Target 250-400 words for the full section before references. Do not exceed 500 words unless the user explicitly asks for detail.
+- Start with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div> summarizing what is publicly known about Unilabs in this section and selected markets before comparing competitors.
+- Use 2-4 short subsections maximum. Prefer compact bullets over long paragraphs.
+- Every paragraph must name at least one competitor and compare to Unilabs explicitly.
 - Include hard metrics wherever found: revenue (€M), growth %, lab counts, deal values, headcount, contract durations
 - HTML structure: <h4> for subsections, <p> for body, <strong> for key data, <ul><li> for lists
-- Cite EVERY claim with a clickable hyperlink — format: <a href="[URL]" target="_blank" rel="noopener">[Source Name, Month Year]</a>
-  Example: <a href="https://www.synlab.com/investors/annual-report-2025" target="_blank" rel="noopener">(Synlab Annual Report, March 2026)</a>
-- If the URL is not available, still cite: <em>[Source Name, Month Year — URL unavailable]</em>
-- Include a REFERENCES section at the bottom listing all cited URLs as a numbered <ol> with <a href> links
+- Cite material claims with compact numbered hyperlinks: <a href="[URL]" target="_blank" rel="noopener">[1]</a>. The number must match the source appendix.
+- Do not use "URL unavailable" unless a source title is known but no public URL can be found. Never invent placeholder URLs.
+- Include a source appendix at the bottom: <div class="references"><h4>Source Appendix</h4><ol> with each source as <li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> — [publisher, date]</li>
+- When two sources conflict, do not smooth over it. Add <div class="conflict-data"><strong>Conflicting data:</strong> [brief explanation with numbered source links]</div>.
+- Avoid repeating high-profile facts unless they are directly relevant to this section. If a repeated fact such as the Synlab Slovakia acquisition or Stockholm radiology tender appears, use it once in a distinct, section-specific way and explain why it matters here.
 - Highlight THREATS: wrap in <strong class="threat"> ... </strong>
 - Highlight OPPORTUNITIES: wrap in <strong class="opportunity"> ... </strong>
-- End with: <div class="ci-implications"><h4>Competitive Implications for Unilabs</h4><ul> followed by 5–6 specific, actionable bullets
-- Then: <div class="references"><h4>References</h4><ol> with each source as <li><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> — [publisher, date]</li>
+- End with: <div class="ci-implications"><h4>Competitive Implications for Unilabs</h4><ul> followed by 2-3 specific, actionable bullets.
 - Executive tone, third person, data-driven, no generic market filler{lang_note}"""
 
 
@@ -168,16 +170,19 @@ EXECUTE THESE SEARCHES FIRST (before writing):
 - Search: "Unilabs competitors Europe {years} strategy"
 
 WRITING CHECKLIST (all items required):
+☑ Maximum 250-400 words before references; concise market-standing overview, not a long update log
 ☑ 2-sentence executive summary of the competitive landscape
 ☑ "Unilabs Current-State Summary" block at the top, describing what is known about Unilabs for this topic and market scope
-☑ Dedicated paragraph or sub-section per competitor (or explicit "no activity" block)
+☑ Cover only competitors with meaningful signal; use compact "no material public signal" wording instead of long filler blocks
 ☑ Unilabs vs. each competitor: who is ahead, behind, or at parity — with evidence
 ☑ Quantitative data wherever available (€, %, lab counts, deal sizes)
-☑ Every claim cited with a clickable <a href> link to the source URL
-☑ All source URLs collected in a numbered References list at the bottom
+☑ Material claims cited with numbered clickable links like <a href="..." target="_blank" rel="noopener">[1]</a>
+☑ All source URLs collected in a numbered Source Appendix at the bottom
+☑ Conflicting figures called out explicitly in a <div class="conflict-data"> block
+☑ Repeated deal/tender facts avoided unless this section adds a new angle
 ☑ Threats and opportunities marked with the correct HTML class
-☑ "Competitive Implications for Unilabs" section with 5–6 actionable bullets
-☑ References section (<div class="references">) with numbered clickable links
+☑ "Competitive Implications for Unilabs" section with 2-3 actionable bullets
+☑ Source Appendix section (<div class="references">) with numbered clickable links
 
 Period: {years} {periods} | Markets: {geo}"""
 
@@ -193,17 +198,19 @@ You are merging two independent research outputs for the "{agent['title']}" sect
 COMPETITORS THAT MUST APPEAR IN THE FINAL OUTPUT: {comp_list}
 
 YOUR TASKS:
-1. Merge the two versions into ONE authoritative HTML section (700–900 words)
-2. Resolve contradictions: keep the better-sourced claim; note unresolved discrepancies with [CONFLICTING DATA]
-3. Ensure EVERY competitor in the list appears — add a "no activity detected" block for any that are missing
-4. Remove all generic market commentary that lacks a specific Unilabs vs. competitor comparison
-5. Strengthen quantitative claims — prefer exact figures over vague language
-6. Ensure the final section starts with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div>
-7. Ensure "Competitive Implications for Unilabs" has 5–6 specific, actionable bullets
-8. Preserve <strong class="threat"> and <strong class="opportunity"> markup
-9. Consolidate all hyperlinked citations from both versions — keep every <a href> link that points to a real URL; remove any dead placeholder links
-10. Produce a merged References section: <div class="references"><h4>References</h4><ol> with deduplicated, numbered <li><a href="[URL]" target="_blank" rel="noopener">[Title]</a> — [Publisher, Date]</li> entries
-11. Append this block at the very end:
+1. Merge the two versions into ONE authoritative HTML section of 300-450 words before references. Hard maximum: 550 words.
+2. Prioritize current market standing and decision-useful implications over a list of quarterly updates.
+3. Resolve contradictions: keep the better-sourced claim where possible, and put unresolved differences in <div class="conflict-data"><strong>Conflicting data:</strong> ...</div> with numbered source links.
+4. Do NOT force every competitor into a long paragraph. Mention only competitors with meaningful public signal; list others briefly as "no material public signal" if needed.
+5. Remove generic market commentary and any facts repeated from other likely sections unless this section adds a differentiated angle.
+6. Specifically avoid repeating the Synlab Slovakia acquisition, Stockholm radiology tender, Eurofins FY2024 revenue, or broad EBITDA/headcount facts unless directly relevant to "{agent['title']}".
+7. Strengthen quantitative claims — prefer exact figures over vague language, but label estimates and ranges clearly.
+8. Ensure the final section starts with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div>.
+9. Ensure "Competitive Implications for Unilabs" has 2-3 specific, actionable bullets only.
+10. Preserve <strong class="threat"> and <strong class="opportunity"> markup.
+11. Convert citations to compact numbered links like <a href="[URL]" target="_blank" rel="noopener">[1]</a> and make each number match the source appendix.
+12. Produce a source appendix: <div class="references"><h4>Source Appendix</h4><ol> with deduplicated, numbered <li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Title]</a> — [Publisher, Date]</li> entries.
+13. Append this block at the very end:
 <div class="validation-note">
   <strong>Validation Summary</strong>
   <ul>

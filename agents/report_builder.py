@@ -61,6 +61,13 @@ def build_html_report(sections, config):
   strong{{color:#003366}}
   .validation-note{{background:#FEF3C7;border-left:4px solid #F59E0B;padding:12px 16px;
     margin:16px 0;border-radius:0 8px 8px 0;font-size:12px;color:#92400E}}
+  .conflict-data{{background:#FEF2F2;border-left:4px solid #DC2626;padding:10px 14px;
+    margin:12px 0;border-radius:0 8px 8px 0;font-size:13px;color:#7F1D1D}}
+  .references{{background:#F8FAFC;border:1px solid #E5E7EB;padding:12px 16px;
+    margin-top:18px;border-radius:8px;font-size:12px;color:#475569}}
+  .references h4{{font-size:12px;margin:0 0 8px;color:#003366;text-transform:uppercase}}
+  .references ol{{margin:0 0 0 18px}}
+  .references li{{margin-bottom:4px}}
   .threat{{background:#FEE2E2;border-left:4px solid #EF4444;padding:8px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:13px;color:#991B1B}}
   .opportunity{{background:#D1FAE5;border-left:4px solid #10B981;padding:8px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:13px;color:#065F46}}
   .insight{{background:#DBEAFE;border-left:4px solid #0D9488;padding:8px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:13px;color:#0C4A6E}}
