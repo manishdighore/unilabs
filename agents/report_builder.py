@@ -1,7 +1,31 @@
 """Assemble final HTML report from validated agent outputs — Competitive Intelligence Edition.
 Enhanced with comprehensive sections and frequency-specific formatting."""
 from datetime import datetime
+import re
 from config import AGENTS, COUNTRIES
+
+
+def _strip_conflict_blocks(content):
+    """Remove model-generated conflict callouts from final executive reports."""
+    cleaned = re.sub(
+        r'<div\b[^>]*class=["\'][^"\']*\bconflict-data\b[^"\']*["\'][^>]*>.*?</div>',
+        '',
+        content or '',
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    cleaned = re.sub(
+        r'<p>\s*<strong>\s*Conflicting\s+data:?\s*</strong>.*?</p>',
+        '',
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    cleaned = re.sub(
+        r'\s*<strong>\s*Conflicting\s+data:?\s*</strong>.*?(?=<h[1-6]\b|<div\b|<p\b|<ul\b|$)',
+        '',
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return cleaned
 
 
 def build_html_report(sections, config):
@@ -20,6 +44,11 @@ def build_html_report(sections, config):
     geo = "All Markets" if len(countries) >= len(COUNTRIES) else ", ".join(countries)
     comp_label = ", ".join(comps[:5]) + (f" +{len(comps)-5} more" if len(comps) > 5 else "")
 
+    cleaned_sections = [
+        {**s, "content": _strip_conflict_blocks(s.get("content", ""))}
+        for s in sections
+    ]
+
     # Build section HTML with enhanced styling
     section_html = "\n".join(f"""
     <section style="margin-bottom:48px;page-break-inside:avoid">
@@ -29,7 +58,7 @@ def build_html_report(sections, config):
       <div style="font-family:'Roboto',sans-serif;font-size:14px;color:#1A1A1A;line-height:1.8">
         {s['content']}
       </div>
-    </section>""" for s in sections)
+    </section>""" for s in cleaned_sections)
 
     # Add executive summary section
     frequency_note = "This report covers a monthly snapshot" if "M" in str(periods[0]) else "This quarterly report provides"
@@ -61,8 +90,6 @@ def build_html_report(sections, config):
   strong{{color:#003366}}
   .validation-note{{background:#FEF3C7;border-left:4px solid #F59E0B;padding:12px 16px;
     margin:16px 0;border-radius:0 8px 8px 0;font-size:12px;color:#92400E}}
-  .conflict-data{{background:#FEF2F2;border-left:4px solid #DC2626;padding:10px 14px;
-    margin:12px 0;border-radius:0 8px 8px 0;font-size:13px;color:#7F1D1D}}
   .references{{background:#F8FAFC;border:1px solid #E5E7EB;padding:12px 16px;
     margin-top:18px;border-radius:8px;font-size:12px;color:#475569}}
   .references h4{{font-size:12px;margin:0 0 8px;color:#003366;text-transform:uppercase}}

@@ -192,7 +192,7 @@ OUTPUT REQUIREMENTS:
 - Cite material claims with compact numbered hyperlinks: <a href="[URL]" target="_blank" rel="noopener">[1]</a>. The number must match the source appendix.
 - Do not use "URL unavailable" unless a source title is known but no public URL can be found. Never invent placeholder URLs.
 - Include a source appendix at the bottom: <div class="references"><h4>Source Appendix</h4><ol> with each source as <li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> — [publisher, date]</li>
-- When two sources conflict, do not smooth over it. Add <div class="conflict-data"><strong>Conflicting data:</strong> [brief explanation with numbered source links]</div>.
+- When sources disagree, resolve the issue in the prose by using the most authoritative/latest source. Do not create a separate discrepancy heading or special callout block. If uncertainty materially changes the conclusion, add one short caveat inside the relevant paragraph with numbered source links.
 - Avoid repeating high-profile facts unless they are directly relevant to this section. If a repeated fact such as the Synlab Slovakia acquisition or Stockholm radiology tender appears, use it once in a distinct, section-specific way and explain why it matters here.
 - Highlight THREATS: wrap in <strong class="threat"> ... </strong>
 - Highlight OPPORTUNITIES: wrap in <strong class="opportunity"> ... </strong>
@@ -234,7 +234,7 @@ WRITING CHECKLIST (all items required):
 ☑ Quantitative data wherever available (€, %, lab counts, deal sizes)
 ☑ Material claims cited with numbered clickable links like <a href="..." target="_blank" rel="noopener">[1]</a>
 ☑ All source URLs collected in a numbered Source Appendix at the bottom
-☑ Conflicting figures called out explicitly in a <div class="conflict-data"> block
+☑ Disputed figures resolved using the most authoritative/latest source; no separate discrepancy headings or callout blocks
 ☑ Repeated deal/tender facts avoided unless this section adds a new angle
 ☑ Threats and opportunities marked with the correct HTML class
 ☑ "Competitive Implications for Unilabs" section with 2-3 actionable bullets
@@ -256,7 +256,7 @@ COMPETITORS THAT MUST APPEAR IN THE FINAL OUTPUT: {comp_list}
 YOUR TASKS:
 1. Merge the two versions into ONE authoritative HTML section of 300-450 words before references. Hard maximum: 550 words.
 2. Prioritize current market standing and decision-useful implications over a list of quarterly updates.
-3. Resolve contradictions: keep the better-sourced claim where possible, and put unresolved differences in <div class="conflict-data"><strong>Conflicting data:</strong> ...</div> with numbered source links.
+3. Resolve contradictions inside the prose by keeping the better-sourced, latest, or legally authoritative claim. Do not create a separate discrepancy heading, paragraph, or special callout block. If uncertainty materially affects the conclusion, add one short caveat in the relevant sentence with numbered source links.
 4. Do NOT force every competitor into a long paragraph. Mention only competitors with meaningful public signal; list others briefly as "no material public signal" if needed.
 5. Remove generic market commentary and any facts repeated from other likely sections unless this section adds a differentiated angle.
 6. Specifically avoid repeating the Synlab Slovakia acquisition, Stockholm radiology tender, Eurofins FY2024 revenue, or broad EBITDA/headcount facts unless directly relevant to "{agent['title']}".
