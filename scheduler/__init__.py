@@ -20,15 +20,20 @@ def _select_ai_provider():
     provider = (db.get_setting("ai_provider", "auto") or "auto").lower()
     openai_key = db.get_setting("openai_key", "")
     anthropic_key = db.get_setting("anthropic_key", "")
+    gemini_key = db.get_setting("gemini_key", "")
 
     if provider == "openai" and openai_key:
         return "openai", openai_key
     if provider == "anthropic" and anthropic_key:
         return "anthropic", anthropic_key
+    if provider == "gemini" and gemini_key:
+        return "gemini", gemini_key
     if openai_key:
         return "openai", openai_key
     if anthropic_key:
         return "anthropic", anthropic_key
+    if gemini_key:
+        return "gemini", gemini_key
     return None, None
 
 
@@ -53,7 +58,7 @@ def _run_scheduled(report_frequency="quarterly"):
     log.info(f"Scheduled competitive intel run triggered ({report_frequency})")
     provider, api_key = _select_ai_provider()
     if not api_key:
-        log.error("Scheduled run aborted -- OpenAI or Anthropic API key not set.")
+        log.error("Scheduled run aborted -- OpenAI, Anthropic, or Gemini API key not set.")
         return
 
     config = _default_config(report_frequency)

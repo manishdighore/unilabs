@@ -63,6 +63,7 @@ class ChatMessage(BaseModel):
 class APIKeys(BaseModel):
     openai_key: Optional[str] = None
     anthropic_key: Optional[str] = None
+    gemini_key: Optional[str] = None
     provider: Optional[str] = None
 
 class SchedulerConfig(BaseModel):
@@ -86,15 +87,20 @@ def _select_ai_provider():
     provider = (db.get_setting("ai_provider", "auto") or "auto").lower()
     openai_key = db.get_setting("openai_key", "")
     anthropic_key = db.get_setting("anthropic_key", "")
+    gemini_key = db.get_setting("gemini_key", "")
 
     if provider == "openai" and openai_key:
         return "openai", openai_key
     if provider == "anthropic" and anthropic_key:
         return "anthropic", anthropic_key
+    if provider == "gemini" and gemini_key:
+        return "gemini", gemini_key
     if openai_key:
         return "openai", openai_key
     if anthropic_key:
         return "anthropic", anthropic_key
+    if gemini_key:
+        return "gemini", gemini_key
     return None, None
 
 
@@ -132,6 +138,30 @@ async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024
                 if isinstance(b, dict) and b.get("type") == "text"
             ]
             return "\n".join(parts).strip()
+
+    if provider == "gemini":
+        def _sync_gemini_chat():
+            from google import genai
+            from google.genai import types
+
+            system = ""
+            turns = []
+            for m in messages:
+                if m.get("role") == "system":
+                    system = m.get("content", "")
+                else:
+                    turns.append(f'{m.get("role", "user").upper()}: {m.get("content", "")}')
+
+            client = genai.Client(api_key=api_key)
+            config = types.GenerateContentConfig(system_instruction=system)
+            response = client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents="\n\n".join(turns),
+                config=config,
+            )
+            return (getattr(response, "text", None) or "").strip()
+
+        return await asyncio.to_thread(_sync_gemini_chat)
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -186,7 +216,9 @@ def save_keys(keys: APIKeys):
         db.set_setting("openai_key", keys.openai_key.strip())
     if keys.anthropic_key:
         db.set_setting("anthropic_key", keys.anthropic_key.strip())
-    if keys.provider and keys.provider.lower() in {"auto", "openai", "anthropic"}:
+    if keys.gemini_key:
+        db.set_setting("gemini_key", keys.gemini_key.strip())
+    if keys.provider and keys.provider.lower() in {"auto", "openai", "anthropic", "gemini"}:
         db.set_setting("ai_provider", keys.provider.lower())
     return {"status": "saved"}
 
@@ -196,15 +228,16 @@ def keys_status():
     return {
         "openai": bool(db.get_setting("openai_key")),
         "anthropic": bool(db.get_setting("anthropic_key")),
+        "gemini": bool(db.get_setting("gemini_key")),
         "provider": db.get_setting("ai_provider", "auto"),
         "active_provider": provider,
     }
 
 @app.post("/api/keys/validate")
 async def validate_keys(keys: APIKeys):
-    """Test provided OpenAI and Anthropic keys against their APIs before saving."""
+    """Test provided OpenAI, Anthropic, and Gemini keys against their APIs before saving."""
     import httpx
-    results = {"openai": None, "anthropic": None}
+    results = {"openai": None, "anthropic": None, "gemini": None}
 
     async with httpx.AsyncClient() as client:
         ok = (keys.openai_key or "").strip()
@@ -260,6 +293,30 @@ async def validate_keys(keys: APIKeys):
             except Exception as e:
                 results["anthropic"] = {"valid": False, "message": str(e)[:200]}
 
+        gk = (keys.gemini_key or "").strip()
+        if not gk:
+            gk = db.get_setting("gemini_key", "")
+        if gk:
+            try:
+                resp = await client.post(
+                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+                    headers={
+                        "x-goog-api-key": gk,
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "contents": [{"parts": [{"text": "Hi"}]}],
+                    },
+                    timeout=15,
+                )
+                if resp.status_code == 200:
+                    results["gemini"] = {"valid": True, "message": "Key is valid"}
+                else:
+                    err = resp.json().get("error", {}).get("message", resp.text[:200])
+                    results["gemini"] = {"valid": False, "message": f"{resp.status_code}: {err}"}
+            except Exception as e:
+                results["gemini"] = {"valid": False, "message": str(e)[:200]}
+
     return results
 
 
@@ -302,7 +359,7 @@ def get_competitors():
 async def trigger_run(config: RunConfig, background_tasks: BackgroundTasks):
     provider, api_key = _select_ai_provider()
     if not api_key:
-        raise HTTPException(400, "OpenAI or Anthropic API key not set. Go to Admin Settings first.")
+        raise HTTPException(400, "OpenAI, Anthropic, or Gemini API key not set. Go to Admin Settings first.")
 
     run_id = db.create_run(config.dict(), trigger="manual")
     db.update_run(run_id, status="running")
@@ -586,7 +643,7 @@ async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
     provider, api_key = _select_ai_provider()
     if not api_key:
         return {"action": "reply",
-                "message": "Please configure an OpenAI or Anthropic API key in Admin Settings before using the chat agent."}
+                "message": "Please configure an OpenAI, Anthropic, or Gemini API key in Admin Settings before using the chat agent."}
 
     # Build system prompt with available agents, markets, competitors
     agent_list = "\n".join(f'- {a["id"]}: {a["title"]}' for a in AGENTS)

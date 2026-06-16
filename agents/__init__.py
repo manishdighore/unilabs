@@ -5,7 +5,7 @@ Competitive Intelligence Edition — Unilabs vs. named competitors.
 API:   OpenAI Responses API  (client.responses.create)
 Model: hardcoded constants below — change SEARCH_MODEL / VALIDATOR_MODEL as needed
 """
-import asyncio, logging
+import asyncio, html, logging
 import httpx
 from openai import AsyncOpenAI
 from config import AGENTS, BATCH_SIZE, LANGUAGES, COUNTRIES
@@ -16,6 +16,7 @@ log = logging.getLogger("agents")
 SEARCH_MODEL    = "gpt-5.5"   # Research agents: Responses API + web_search_preview
 VALIDATOR_MODEL = "gpt-5.5"   # CI Validator:    Responses API, synthesis only
 ANTHROPIC_MODEL = "claude-sonnet-4-6"
+GEMINI_MODEL    = "gemini-3.5-flash"
 # ──────────────────────────────────────────────────────────────────────────
 
 
@@ -77,6 +78,61 @@ async def call_anthropic(api_key: str, instructions: str, user_input: str, use_w
         resp.raise_for_status()
         text = _anthropic_text(resp.json())
         return text or "<p>No content returned from Anthropic.</p>"
+
+
+def _gemini_source_appendix(response) -> str:
+    """Build a source appendix from Gemini grounding metadata when present."""
+    try:
+        grounding = response.candidates[0].grounding_metadata
+        chunks = getattr(grounding, "grounding_chunks", None) or []
+    except Exception:
+        chunks = []
+
+    sources = []
+    seen = set()
+    for chunk in chunks:
+        web = getattr(chunk, "web", None)
+        uri = getattr(web, "uri", None) if web else None
+        if not uri or uri in seen:
+            continue
+        seen.add(uri)
+        title = getattr(web, "title", None) or uri
+        sources.append((html.escape(title), html.escape(uri, quote=True)))
+
+    if not sources:
+        return ""
+
+    items = "\n".join(
+        f'<li id="gemini-source-{i}"><a href="{uri}" target="_blank" rel="noopener">{title}</a> - Gemini Google Search grounding</li>'
+        for i, (title, uri) in enumerate(sources, 1)
+    )
+    return f'\n<div class="references"><h4>Gemini Grounding Sources</h4><ol>{items}</ol></div>'
+
+
+def _call_gemini_sync(api_key: str, instructions: str, user_input: str, use_google_search: bool) -> str:
+    """Google GenAI SDK caller. Research calls use Google Search grounding."""
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(api_key=api_key)
+    tools = [types.Tool(google_search=types.GoogleSearch())] if use_google_search else None
+    config = types.GenerateContentConfig(
+        system_instruction=instructions,
+        tools=tools,
+    )
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=user_input,
+        config=config,
+    )
+    text = (getattr(response, "text", None) or "").strip()
+    if use_google_search:
+        text += _gemini_source_appendix(response)
+    return text or "<p>No content returned from Gemini.</p>"
+
+
+async def call_gemini(api_key: str, instructions: str, user_input: str, use_google_search: bool) -> str:
+    return await asyncio.to_thread(_call_gemini_sync, api_key, instructions, user_input, use_google_search)
 
 
 # ====================================================================
@@ -267,6 +323,21 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
                     use_web_search=True,
                 ),
             )
+        elif provider == "gemini":
+            out_a, out_b = await asyncio.gather(
+                call_gemini(
+                    client,
+                    _sys_prompt_research(agent, config, agent["agentA"]),
+                    _user_prompt_research(agent, config, "Unilabs Research"),
+                    use_google_search=True,
+                ),
+                call_gemini(
+                    client,
+                    _sys_prompt_research(agent, config, agent["agentB"]),
+                    _user_prompt_research(agent, config, "Competitor Intelligence"),
+                    use_google_search=True,
+                ),
+            )
         else:
             out_a, out_b = await asyncio.gather(
                 call_responses_search(
@@ -298,6 +369,13 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
                 _validator_user_prompt(agent, out_a, out_b),
                 use_web_search=False,
             )
+        elif provider == "gemini":
+            validated = await call_gemini(
+                client,
+                _sys_prompt_validator(agent, config),
+                _validator_user_prompt(agent, out_a, out_b),
+                use_google_search=False,
+            )
         else:
             validated = await call_responses_validate(
                 client,
@@ -320,7 +398,7 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
 
 async def execute_full_run(config, api_key, provider="openai", enabled_ids=None, on_status=None, extra_agents=None):
     """Run all enabled agents in batches. Returns list of result dicts."""
-    client      = api_key if provider == "anthropic" else AsyncOpenAI(api_key=api_key)
+    client      = api_key if provider in {"anthropic", "gemini"} else AsyncOpenAI(api_key=api_key)
     all_agents  = AGENTS + (extra_agents or [])
     agents_to_run = [a for a in all_agents if not enabled_ids or a["id"] in enabled_ids]
     results     = []
