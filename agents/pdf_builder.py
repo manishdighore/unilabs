@@ -16,6 +16,7 @@ from reportlab.platypus import (
 from reportlab.platypus.frames import Frame
 from reportlab.platypus.doctemplate import PageTemplate
 from config import COUNTRIES
+from agents.report_builder import _prepare_report_sections
 
 
 # --- Colors ---------------------------------------------------------------
@@ -57,6 +58,22 @@ def _strip_html(text):
     text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#)', '&amp;', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
+
+
+def _source_item_to_text(item):
+    """Preserve source URLs when converting appendix HTML to PDF text."""
+    def replace_link(match):
+        url = match.group(1)
+        label = _strip_html(match.group(2))
+        return f"{label} ({url})"
+
+    text = re.sub(
+        r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+        replace_link,
+        item or "",
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    return _strip_html(text)
 
 
 def _make_styles():
@@ -144,6 +161,7 @@ def _header_footer(canvas_obj, doc):
 def build_pdf_report(sections, config):
     buf = io.BytesIO()
     styles = _make_styles()
+    cleaned_sections, source_entries = _prepare_report_sections(sections)
 
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
@@ -196,7 +214,7 @@ def build_pdf_report(sections, config):
         spaceBefore=4, spaceAfter=12,
     )))
 
-    for i, s in enumerate(sections, 1):
+    for i, s in enumerate(cleaned_sections, 1):
         story.append(Paragraph(
             f'<font color="#EF4444"><b>{i}.</b></font>  {_esc(s["title"])}',
             styles["toc_item"],
@@ -204,7 +222,7 @@ def build_pdf_report(sections, config):
     story.append(PageBreak())
 
     # -- Sections --
-    for i, section in enumerate(sections):
+    for i, section in enumerate(cleaned_sections):
         color = section.get("color", "#003366")
         content = _strip_html(section.get("content", ""))
 
@@ -242,8 +260,17 @@ def build_pdf_report(sections, config):
             ))
 
         story.append(Spacer(1, 6*mm))
-        if i < len(sections) - 1 and (i + 1) % 3 == 0:
+        if i < len(cleaned_sections) - 1 and (i + 1) % 3 == 0:
             story.append(PageBreak())
+
+    if source_entries:
+        story.append(PageBreak())
+        story.append(Paragraph("SOURCE APPENDIX", styles["section_title"]))
+        for i, source in enumerate(source_entries, 1):
+            story.append(Paragraph(
+                f'<font color="#EF4444"><b>{i}.</b></font> {_esc(_source_item_to_text(source))}',
+                styles["body"],
+            ))
 
     # -- Footer summary --
     story.append(Spacer(1, 10*mm))

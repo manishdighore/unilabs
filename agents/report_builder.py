@@ -5,14 +5,26 @@ import re
 from config import AGENTS, COUNTRIES
 
 
-def _strip_conflict_blocks(content):
-    """Remove model-generated conflict callouts from final executive reports."""
-    cleaned = re.sub(
-        r'<div\b[^>]*class=["\'][^"\']*\bconflict-data\b[^"\']*["\'][^>]*>.*?</div>',
-        '',
-        content or '',
-        flags=re.IGNORECASE | re.DOTALL,
-    )
+CALLOUT_CLASSES = ("conflict-data", "validation-note", "no-activity")
+REFERENCE_BLOCK_RE = re.compile(
+    r'<div\b(?=[^>]*class=["\'][^"\']*\breferences\b[^"\']*["\'])[^>]*>.*?</div>',
+    re.IGNORECASE | re.DOTALL,
+)
+LI_RE = re.compile(r'<li\b([^>]*)>(.*?)</li>', re.IGNORECASE | re.DOTALL)
+SOURCE_ID_RE = re.compile(r'id=["\'][^"\']*?(\d+)["\']', re.IGNORECASE)
+HREF_RE = re.compile(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.IGNORECASE | re.DOTALL)
+
+
+def _strip_callout_blocks(content):
+    """Remove model-generated internal callouts from final executive reports."""
+    cleaned = content or ''
+    for class_name in CALLOUT_CLASSES:
+        cleaned = re.sub(
+            rf'<div\b[^>]*class=["\'][^"\']*\b{class_name}\b[^"\']*["\'][^>]*>.*?</div>',
+            '',
+            cleaned,
+            flags=re.IGNORECASE | re.DOTALL,
+        )
     cleaned = re.sub(
         r'<p>\s*<strong>\s*Conflicting\s+data:?\s*</strong>.*?</p>',
         '',
@@ -26,6 +38,90 @@ def _strip_conflict_blocks(content):
         flags=re.IGNORECASE | re.DOTALL,
     )
     return cleaned
+
+
+def _strip_repeated_boilerplate(content):
+    """Remove repeatedly observed generic platform boilerplate from sections."""
+    patterns = [
+        r'<p\b[^>]*>[^<]*(?:Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform|integrated European diagnostics platform across laboratory medicine)[\s\S]*?</p>',
+        r'<li\b[^>]*>[^<]*(?:Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform|integrated European diagnostics platform across laboratory medicine)[\s\S]*?</li>',
+        r'\s*Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform[^.]*\.\s*',
+    ]
+    cleaned = content or ''
+    for pattern in patterns:
+        cleaned = re.sub(pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+    return cleaned
+
+
+def _renumber_citations(content, local_to_global):
+    """Update section-local citation labels to report-level source numbers."""
+    updated = content or ''
+    for local_num, global_num in sorted(local_to_global.items(), key=lambda item: len(str(item[0])), reverse=True):
+        updated = re.sub(
+            rf'(<a\b[^>]*>)\s*\[{local_num}\]\s*(</a>)',
+            rf'\1[{global_num}]\2',
+            updated,
+            flags=re.IGNORECASE,
+        )
+        updated = re.sub(
+            rf'href=["\']#source-{local_num}["\']',
+            f'href="#source-{global_num}"',
+            updated,
+            flags=re.IGNORECASE,
+        )
+    return updated
+
+
+def _prepare_report_sections(sections):
+    """Clean sections, deduplicate references, and return report-level sources."""
+    source_entries = []
+    source_index = {}
+    cleaned_sections = []
+
+    for section in sections:
+        local_to_global = {}
+        content = _strip_repeated_boilerplate(_strip_callout_blocks(section.get("content", "")))
+
+        def collect_reference_block(match):
+            block = match.group(0)
+            for position, (attrs, inner) in enumerate(LI_RE.findall(block), 1):
+                id_match = SOURCE_ID_RE.search(attrs)
+                local_num = int(id_match.group(1)) if id_match else position
+                href_match = HREF_RE.search(inner)
+                href = href_match.group(1).strip() if href_match else ""
+                text_key = re.sub(r'<[^>]+>', ' ', inner).strip()
+                key = (href or text_key).lower()
+                if not key:
+                    continue
+                if key not in source_index:
+                    source_index[key] = len(source_entries) + 1
+                    source_entries.append(inner.strip())
+                local_to_global[local_num] = source_index[key]
+            return ""
+
+        content = REFERENCE_BLOCK_RE.sub(collect_reference_block, content)
+        content = _renumber_citations(content, local_to_global)
+        content = _strip_repeated_boilerplate(_strip_callout_blocks(content)).strip()
+        cleaned_sections.append({**section, "content": content})
+
+    return cleaned_sections, source_entries
+
+
+def _build_source_appendix(source_entries):
+    if not source_entries:
+        return ""
+    items = "\n".join(
+        f'<li id="source-{i}">{entry}</li>'
+        for i, entry in enumerate(source_entries, 1)
+    )
+    return f"""
+  <section id="source-appendix" style="margin-top:56px;page-break-before:always">
+    <h2 style="font-family:'Roboto',sans-serif;font-size:20px;font-weight:700;color:#003366;
+        text-transform:uppercase;padding-bottom:12px;border-bottom:3px solid #003366;
+        margin-bottom:20px;letter-spacing:0.5px">Source Appendix</h2>
+    <div class="references"><ol>{items}</ol></div>
+  </section>
+"""
 
 
 def build_html_report(sections, config):
@@ -44,10 +140,7 @@ def build_html_report(sections, config):
     geo = "All Markets" if len(countries) >= len(COUNTRIES) else ", ".join(countries)
     comp_label = ", ".join(comps[:5]) + (f" +{len(comps)-5} more" if len(comps) > 5 else "")
 
-    cleaned_sections = [
-        {**s, "content": _strip_conflict_blocks(s.get("content", ""))}
-        for s in sections
-    ]
+    cleaned_sections, source_entries = _prepare_report_sections(sections)
 
     # Build section HTML with enhanced styling
     section_html = "\n".join(f"""
@@ -88,8 +181,6 @@ def build_html_report(sections, config):
   ul{{margin:10px 0 14px 24px}} 
   li{{margin-bottom:6px}}
   strong{{color:#003366}}
-  .validation-note{{background:#FEF3C7;border-left:4px solid #F59E0B;padding:12px 16px;
-    margin:16px 0;border-radius:0 8px 8px 0;font-size:12px;color:#92400E}}
   .references{{background:#F8FAFC;border:1px solid #E5E7EB;padding:12px 16px;
     margin-top:18px;border-radius:8px;font-size:12px;color:#475569}}
   .references h4{{font-size:12px;margin:0 0 8px;color:#003366;text-transform:uppercase}}
@@ -147,6 +238,7 @@ def build_html_report(sections, config):
   </section>
   
   {section_html}
+  {_build_source_appendix(source_entries)}
   
   <footer style="margin-top:60px;padding-top:24px;border-top:3px solid #E5E7EB;display:flex;
       justify-content:space-between;align-items:center;font-size:12px;color:#6B7280">
