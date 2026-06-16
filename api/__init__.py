@@ -21,6 +21,7 @@ from scheduler import (
 
 log = logging.getLogger("api")
 app = FastAPI(title="Unilabs Competitive Intelligence Platform", version="1.0.0")
+OPENAI_CHAT_MODEL = "gpt-5.2"
 
 # Serve static files (if directory exists)
 static_dir = os.path.join(BASE_DIR, "static")
@@ -171,7 +172,7 @@ async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024
                 "Content-Type": "application/json",
             },
             json={
-                "model": "gpt-4o",
+                "model": OPENAI_CHAT_MODEL,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "messages": messages,
@@ -252,7 +253,7 @@ async def validate_keys(keys: APIKeys):
                         "Content-Type": "application/json",
                     },
                     json={
-                        "model": "gpt-4o",
+                        "model": OPENAI_CHAT_MODEL,
                         "max_tokens": 10,
                         "messages": [{"role": "user", "content": "Hi"}],
                     },

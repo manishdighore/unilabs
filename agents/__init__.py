@@ -13,8 +13,8 @@ from config import AGENTS, BATCH_SIZE, LANGUAGES, COUNTRIES
 log = logging.getLogger("agents")
 
 # ── Model configuration (hardcoded — change here to switch models) ─────────
-SEARCH_MODEL    = "gpt-5.5"   # Research agents: Responses API + web_search_preview
-VALIDATOR_MODEL = "gpt-5.5"   # CI Validator:    Responses API, synthesis only
+SEARCH_MODEL    = "gpt-5.2"   # Research agents: Responses API + web_search_preview
+VALIDATOR_MODEL = "gpt-5.2"   # CI Validator:    Responses API, synthesis only
 ANTHROPIC_MODEL = "claude-sonnet-4-6"
 GEMINI_MODEL    = "gemini-3.5-flash"
 # ──────────────────────────────────────────────────────────────────────────
