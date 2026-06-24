@@ -1,6 +1,6 @@
 """
 Multi-agent engine: OpenAI Responses API with web_search_preview tool.
-Competitive Intelligence Edition — Unilabs vs. named competitors.
+Market Intelligence Edition - selected-period competitor and market updates.
 
 API:   OpenAI Responses API  (client.responses.create)
 Model: hardcoded constants below — change SEARCH_MODEL / VALIDATOR_MODEL as needed
@@ -14,9 +14,73 @@ log = logging.getLogger("agents")
 
 # ── Model configuration (hardcoded — change here to switch models) ─────────
 SEARCH_MODEL    = "gpt-5.2"   # Research agents: Responses API + web_search_preview
-VALIDATOR_MODEL = "gpt-5.2"   # CI Validator:    Responses API, synthesis only
+VALIDATOR_MODEL = "gpt-5.2"   # Market Intel Validator: Responses API, synthesis only
 ANTHROPIC_MODEL = "claude-sonnet-4-6"
 GEMINI_MODEL    = "gemini-3.5-flash"
+
+SECTION_OUTPUT_RULES = {
+    "competitive-overview": """- Include only selected-period competitor updates: published financials, important news, new tests, tools, services, market entries/exits.
+- Do not describe Unilabs or profile the competitors.
+- For each update, state the direct implication or benefit for Unilabs.""",
+    "ma-deal-tracker": """- Focus only on competitor M&A and relevant PE/healthcare diagnostics deals.
+- Do not write competitor-by-competitor if there was no deal activity.
+- Include deal value, buyer/seller/target, geography, rationale, and Unilabs implication where available.""",
+    "revenue-benchmarking": """- Focus only on newly published competitor financials for the selected period.
+- Include a compact table with competitor, latest revenue, EBITDA/EBITA, margin/growth, publication date, and implication.
+- Add a simple HTML chart block for last-three-year revenue and EBITDA/EBITA where public data is available.""",
+    "market-share-analysis": """- Do not describe Unilabs.
+- Output a simple table with competitor, estimated Europe market share %, revenue, countries served, and growth projection.
+- Keep assumptions explicit and cite each estimate.""",
+    "service-portfolio": """- Do not describe Unilabs.
+- Include only selected-period competitor updates on services, new tests, tools, solutions, or portfolio changes.
+- If no real update exists, omit that competitor.""",
+    "pricing-strategy": """- Analyze pricing regulation updates, reimbursement/tariff changes, public tender price signals, and competitor pricing updates in selected Unilabs markets.
+- Do not discuss generic contract strategy unless pricing is explicit.
+- Organize by market/country where possible.""",
+    "tech-capability-gap": """- Do not describe Unilabs at the beginning.
+- Include selected-period technology updates from European competitors and relevant US diagnostics/health-tech players.
+- Cover AI, automation, digital pathology, genomics, patient portals, LIMS, and partnerships only when a real update exists.""",
+    "customer-win-loss": """- Include only selected-period customer wins/losses, hospital contracts, health-system awards, tender outcomes, and outsourcing decisions.
+- Omit competitors with no verified win/loss update.
+- State impact or benefit for Unilabs after each update.""",
+    "brand-perception": """- Use table format.
+- Include competitor, market, reputation/media/review signal, direction of change, source/date, and Unilabs implication.
+- Do not include generic brand benchmarking.""",
+    "talent-war": """- Analyze LinkedIn/company career-site hiring trends by competitor and market for the selected period.
+- Include layoffs, hiring surges, open-position counts vs prior months where available, role families, and seniority.
+- Add a compact chart-ready table for open positions by competitor/role family/month.""",
+    "digital-ecosystem": """- Include only selected-period digital and AI updates from competitors and relevant US players.
+- Cover launches, partnerships, funding, deployments, or regulatory milestones.
+- Explain threat, partnership opening, or capability gap for Unilabs.""",
+    "regulatory-advantage": """- Include only selected-period regulatory, IVDR, reimbursement, accreditation, penalty, audit, or compliance updates.
+- Avoid generic regulatory background.
+- Explain market impact and Unilabs implication.""",
+    "payer-relationship": """- Include only selected-period payer, insurer, hospital, PPP, outsourcing, or health-system relationship updates.
+- Omit generic relationship maps.
+- State what changed and why it matters for Unilabs.""",
+    "esg-benchmarking": """- Use table format.
+- Include only selected-period ESG/CSRD/sustainability updates, reports, targets, waste/emissions, governance, or social impact.
+- No generic ESG benchmarking.""",
+    "supply-chain-risk": """- Include only selected-period supply chain, lab disruption, reagent/vendor, energy, logistics, tariff, FX, or operational resilience updates.
+- Explain risk, cost pressure, or opportunity for Unilabs.""",
+    "clinical-pipeline": """- Include only selected-period clinical/scientific updates: emerging tests, studies, guideline changes, liquid biopsy, companion diagnostics, genomics panels.
+- Explain competitor pipeline implication and practical response option for Unilabs.""",
+    "tender-intelligence": """- Use table format where possible.
+- Include selected-period tenders and tender outcomes: buyer, country, scope, value, duration, winner, deadline/status, Unilabs implication.
+- Focus on pricing and procurement signals.""",
+    "leadership-movements": """- Include only selected-period C-suite, board, country GM, senior scientific, commercial, digital, and operations leadership moves.
+- Explain likely strategic meaning and talent implications for Unilabs.
+- No generic org descriptions.""",
+    "media-share-of-voice": """- Use table format.
+- Include selected-period competitor media, PR, crisis, conference, campaign, award, or thought-leadership updates.
+- Explain relevance for Unilabs communications or positioning.""",
+    "partnership-alliances": """- Include only selected-period competitor partnerships and alliances: pharma, medtech, AI, academia, hospitals, payers, startups, distributors.
+- Explain affected markets, strategic relevance, and partnership opportunity or threat for Unilabs.""",
+}
+
+DEFAULT_SECTION_RULES = """- Include only selected-period verified updates.
+- Avoid generic company descriptions, stale background, and competitor-by-competitor filler.
+- Explain what changed and why it matters for Unilabs."""
 # ──────────────────────────────────────────────────────────────────────────
 
 
@@ -36,7 +100,7 @@ async def call_responses_search(client: AsyncOpenAI, instructions: str, user_inp
 
 
 async def call_responses_validate(client: AsyncOpenAI, instructions: str, user_input: str) -> str:
-    """Responses API for CI Validator — synthesis and QA, no additional web search."""
+    """Responses API for Market Intel Validator - synthesis and QA, no additional web search."""
     response = await client.responses.create(
         model=VALIDATOR_MODEL,
         instructions=instructions,
@@ -147,134 +211,144 @@ def _get_competitors(config):
     )
 
 
+def _period_scope(config):
+    years = ", ".join(str(y) for y in config.get("years", [])) or "selected year"
+    periods = ", ".join(str(p) for p in config.get("periods", [])) or "selected period"
+    frequency = config.get("report_frequency", "quarterly")
+    return f"{years} {periods} ({frequency})"
+
+
+def _section_rules(agent):
+    return SECTION_OUTPUT_RULES.get(agent.get("id"), DEFAULT_SECTION_RULES)
+
+
 # ====================================================================
-# PROMPT BUILDERS — COMPETITIVE INTELLIGENCE FOCUSED
+# PROMPT BUILDERS — MARKET INTELLIGENCE FOCUSED
 # ====================================================================
 
 def _sys_prompt_research(agent, config, focus):
-    """System instructions for research agents (used in Responses API `instructions` field)."""
-    lang      = config.get("language", "en")
+    """System instructions for research agents."""
+    lang = config.get("language", "en")
     lang_name = next((l["name"] for l in LANGUAGES if l["code"] == lang), "English")
     lang_note = f"\nIMPORTANT: Write the entire output in {lang_name}." if lang != "en" else ""
     competitors = _get_competitors(config)
-    comp_list   = ", ".join(competitors) if competitors else "all major European diagnostics competitors"
+    comp_list = ", ".join(competitors) if competitors else "major diagnostics competitors and relevant market players"
     market_list = ", ".join(f'{c["code"]} ({c["name"]})' for c in COUNTRIES)
+    period = _period_scope(config)
+    rules = _section_rules(agent)
 
-    return f"""You are a senior competitive intelligence analyst writing for Unilabs executive leadership.
-Unilabs operates diagnostic labs, pathology, radiology, and genetics services across these configured markets: {market_list}.
+    return f"""You are a senior market intelligence analyst writing a concise monthly-style update for Unilabs executive leadership.
+The report covers selected Unilabs markets: {market_list}.
 
 ANALYSIS SECTION: "{agent['title']}"
+SELECTED PERIOD: {period}
 RESEARCH FOCUS: {focus}
-COMPETITORS YOU MUST COVER: {comp_list}
+COMPETITORS / PLAYERS TO CHECK: {comp_list}
 
-MANDATORY WEB SEARCH PROTOCOL — execute ALL searches before writing:
-1. Search "Unilabs {agent['title']} 2025 2026" — Unilabs' own position and announcements
-2. For EACH competitor listed, search "[CompetitorName] {agent['title']} 2025 2026"
-3. Search "[CompetitorName] diagnostics strategy announcement press release 2026" for each
-4. Search "European diagnostics market {agent['title']} 2026 competitive"
-5. Search for earnings calls, investor presentations, and trade publications for each entity
+SECTION-SPECIFIC BRIEF:
+{rules}
 
-COMPETITOR SILENCE RULE:
-If you find no verified public information for a competitor in this topic area, do not create a long no-activity block.
-Mention it only once in compact prose if it changes the conclusion; otherwise omit that competitor from the section narrative.
+WEB SEARCH PROTOCOL - execute targeted searches before writing:
+1. Search each named competitor plus "{agent['title']}" plus the selected period: {period}.
+2. Search selected markets plus diagnostics plus the section topic and selected period.
+3. Search official press releases, investor results, annual/interim reports, tender portals, regulator pages, LinkedIn/company career pages, and credible trade press.
+4. For technology sections, include relevant US diagnostics/health-tech players when they create a signal for Europe or Unilabs.
+5. If no verified update exists for a competitor in the selected period, omit that competitor instead of writing filler.
 
-OUTPUT REQUIREMENTS:
-- Write for busy executives: concise, skimmable, and focused on a quick overview of market standing plus the core monthly updates/news. Do not write a long chronology.
-- Target 120-220 words for the full section before references. Hard maximum: 260 words.
-- Start with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div> summarizing what is publicly known about Unilabs in this section and selected markets before comparing competitors.
-- Use 1-2 short subsections maximum. Prefer compact bullets over long paragraphs.
-- Every paragraph must name at least one competitor and compare to Unilabs explicitly.
-- Include hard metrics wherever found: revenue (€M), growth %, lab counts, deal values, headcount, contract durations
-- HTML structure: <h4> for subsections, <p> for body, <strong> for key data, <ul><li> for lists
-- Cite material claims with compact numbered hyperlinks: <a href="[URL]" target="_blank" rel="noopener">[1]</a>. The number must match the source appendix.
-- Do not use "URL unavailable" unless a source title is known but no public URL can be found. Never invent placeholder URLs.
-- Include a source appendix at the bottom of the section for the report builder to consolidate: <div class="references"><h4>Source Appendix</h4><ol> with each source as <li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> — [publisher, date]</li>
-- When sources disagree, resolve the issue in the prose by using the most authoritative/latest source. Do not create a separate discrepancy heading or special callout block. If uncertainty materially changes the conclusion, add one short caveat inside the relevant paragraph with numbered source links.
-- Avoid repeating high-profile facts unless they are directly relevant to this section. Do not repeat boilerplate such as "Unilabs enters Q2 2026 as an integrated European diagnostics platform" or generic revenue/EBITDA/headcount summaries. If a repeated fact such as the Synlab Slovakia acquisition or Stockholm radiology tender appears, use it only with a distinct section-specific implication.
-- Highlight THREATS: wrap in <strong class="threat"> ... </strong>
-- Highlight OPPORTUNITIES: wrap in <strong class="opportunity"> ... </strong>
-- End with: <div class="ci-implications"><h4>Competitive Implications for Unilabs</h4><ul> followed by 1-2 specific, actionable bullets.
-- Executive tone, third person, data-driven, no generic market filler{lang_note}"""
+GLOBAL OUTPUT REQUIREMENTS:
+- Focus on real updates in the selected period, not generic company descriptions or stale background.
+- Do not start by describing Unilabs unless the section-specific brief explicitly requires it.
+- Do not use headings like "[Competitor] vs Unilabs"; write market-intel updates and implications.
+- Target 120-220 words before references. Hard maximum: 260 words unless a required table needs more rows.
+- Use 1-2 short subsections maximum, or a compact table when requested.
+- Include only competitors/markets with meaningful verified signals. Omit no-update competitors.
+- Include hard metrics wherever found: revenue, EBITDA/EBITA, growth %, market share %, deal values, tender values, job counts, contract durations.
+- Cite material claims with compact numbered hyperlinks: <a href="[URL]" target="_blank" rel="noopener">[1]</a>.
+- Include a source appendix at the bottom for consolidation: <div class="references"><h4>Source Appendix</h4><ol><li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Full source title]</a> - [publisher, date]</li></ol></div>
+- Resolve source disagreements in prose using the most authoritative/latest source. Do not create discrepancy/conflict callouts.
+- Highlight threats with <strong class="threat">...</strong> and opportunities with <strong class="opportunity">...</strong> only when useful.
+- End with <div class="ci-implications"><h4>Implication for Unilabs</h4><ul> with 1-2 specific bullets.
+- Clean HTML only. No markdown. No internal QA notes, validation summaries, confidence scores, or no-activity blocks.{lang_note}"""
 
 
 def _user_prompt_research(agent, config, perspective_label):
     """User input for research agents."""
     competitors = _get_competitors(config)
-    geo         = "All Unilabs Markets" if len(config.get("countries", [])) >= len(COUNTRIES) else ", ".join(config.get("countries", []))
-    years       = ", ".join(str(y) for y in config.get("years", []))
-    periods     = ", ".join(config.get("periods", []))
-
+    geo = "All selected Unilabs markets" if len(config.get("countries", [])) >= len(COUNTRIES) else ", ".join(config.get("countries", []))
+    period = _period_scope(config)
     search_list = "\n".join(
-        f'- Search: "{c} {agent["title"]} {years}"'
+        f'- Search: "{c} {agent["title"]} {period}"'
         for c in competitors
     )
 
-    return f"""Write the "{agent['title']}" section — {perspective_label} perspective — for the Unilabs Competitive Intelligence Report.
+    return f"""Write the "{agent['title']}" section for the Unilabs Market Intelligence report.
 
 REPORT PARAMETERS:
-- Period: {years} {periods}
+- Period: {period}
 - Markets: {geo}
-- Competitors to cover: {", ".join(competitors)}
+- Competitors / players to check: {", ".join(competitors)}
+- Research lens: {perspective_label}
 
-EXECUTE THESE SEARCHES FIRST (before writing):
-- Search: "Unilabs {agent['title']} {years}"
+EXECUTE THESE SEARCHES FIRST:
+- Search: "{agent['title']} diagnostics {period} {geo}"
 {search_list}
-- Search: "{agent['title']} European diagnostics {years} trends"
-- Search: "Unilabs competitors Europe {years} strategy"
+- Search official company news, filings/results, regulator pages, tender portals, LinkedIn/company career pages, and trade press for the selected period.
 
-WRITING CHECKLIST (all items required):
-☑ Maximum 120-220 words before references; concise market-standing overview and core monthly updates, not a long update log
-☑ 2-sentence executive summary of the competitive landscape
-☑ "Unilabs Current-State Summary" block at the top, describing what is known about Unilabs for this topic and market scope
-☑ Cover only competitors with meaningful signal; no long "no public activity" blocks
-☑ Unilabs vs. each competitor: who is ahead, behind, or at parity — with evidence
-☑ Quantitative data wherever available (€, %, lab counts, deal sizes)
-☑ Material claims cited with numbered clickable links like <a href="..." target="_blank" rel="noopener">[1]</a>
-☑ All source URLs collected in a numbered Source Appendix at the bottom
-☑ Disputed figures resolved using the most authoritative/latest source; no separate discrepancy headings or callout blocks
-☑ Repeated deal/tender/platform facts avoided unless this section adds a new angle
-☑ Threats and opportunities marked with the correct HTML class
-☑ "Competitive Implications for Unilabs" section with 1-2 actionable bullets
-☑ Source Appendix section (<div class="references">) with numbered clickable links
+WRITING CHECKLIST:
+- Selected-period updates only; no generic company descriptions.
+- No "competitor name vs Unilabs" heading style.
+- Omit competitors with no relevant update.
+- Use table format when the section-specific brief requests a table.
+- For financials, include latest figures and last-three-year revenue/EBITDA or EBITA table/chart-ready values where public.
+- For hiring, include LinkedIn/career-page trend signals and role-family counts where public.
+- Each material claim has a numbered clickable source link and an appendix entry.
+- End with 1-2 practical implications for Unilabs.
 
-Period: {years} {periods} | Markets: {geo}"""
+Period: {period} | Markets: {geo}"""
 
 
 def _sys_prompt_validator(agent, config):
-    """System instructions for the CI Validator."""
+    """System instructions for the Market Intel Validator."""
     competitors = _get_competitors(config)
-    comp_list   = ", ".join(competitors)
+    comp_list = ", ".join(competitors)
+    period = _period_scope(config)
+    rules = _section_rules(agent)
 
-    return f"""You are a senior QA analyst and competitive intelligence editor for Unilabs executive reports.
+    return f"""You are a senior editor for Unilabs market intelligence reports.
 You are merging two independent research outputs for the "{agent['title']}" section.
 
-COMPETITORS THAT MUST APPEAR IN THE FINAL OUTPUT: {comp_list}
+SELECTED PERIOD: {period}
+COMPETITORS / PLAYERS CHECKED: {comp_list}
+
+SECTION-SPECIFIC BRIEF:
+{rules}
 
 YOUR TASKS:
-1. Merge the two versions into ONE authoritative HTML section of 160-240 words before references. Hard maximum: 300 words.
-2. Prioritize current market standing and decision-useful implications over a list of quarterly updates.
-3. Resolve contradictions inside the prose by keeping the better-sourced, latest, or legally authoritative claim. Do not create a separate discrepancy heading, paragraph, or special callout block. If uncertainty materially affects the conclusion, add one short caveat in the relevant sentence with numbered source links.
-4. Do NOT force every competitor into a long paragraph. Mention only competitors with meaningful public signal; omit others unless their silence changes the conclusion.
-5. Remove generic market commentary and any facts repeated from other likely sections unless this section adds a differentiated angle.
-6. Specifically avoid repeating the Synlab Slovakia acquisition, Stockholm radiology tender, Eurofins FY2024 revenue, broad EBITDA/headcount facts, or generic "Unilabs enters Q2 2026..." platform language unless directly relevant to "{agent['title']}".
-7. Strengthen quantitative claims — prefer exact figures over vague language, but label estimates and ranges clearly.
-8. Ensure the final section starts with <div class="unilabs-summary"><h4>Unilabs Current-State Summary</h4><p>...</p></div>.
-9. Ensure "Competitive Implications for Unilabs" has 1-2 specific, actionable bullets only.
-10. Preserve <strong class="threat"> and <strong class="opportunity"> markup.
-11. Convert citations to compact numbered links like <a href="[URL]" target="_blank" rel="noopener">[1]</a> and make each number match the source appendix.
-12. Produce a source appendix: <div class="references"><h4>Source Appendix</h4><ol> with deduplicated, numbered <li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Title]</a> — [Publisher, Date]</li> entries.
-13. Do not include a validation summary, confidence score, or internal QA note in the client-facing section.
+1. Merge the two versions into ONE authoritative HTML section of 160-240 words before references. Hard maximum: 300 words unless a required table needs more rows.
+2. Keep only selected-period updates, latest public figures, and decision-useful implications.
+3. Remove generic descriptions of Unilabs and competitors unless a sentence is necessary to understand the update.
+4. Do not force every competitor into the output. Omit competitors with no meaningful update.
+5. Do not use "[Competitor] vs Unilabs" headings.
+6. Preserve or create compact tables when the section-specific brief requests tables, financials, market share, tenders, reputation, ESG, media, or hiring trends.
+7. For Revenue & Financial Benchmarking, include a table/chart-ready block with last-three-year revenue and EBITDA/EBITA where public.
+8. For Talent & Workforce Competition, include LinkedIn/career-site hiring trends, role-family counts, layoffs, or hiring surges where available.
+9. For Market Share & Positioning, include market share %, Europe share, revenue, countries served, and growth projection in a simple table.
+10. Resolve source disagreements in prose using the latest, official, or legally authoritative source. Do not create discrepancy/conflict callouts.
+11. Convert citations to compact numbered links like <a href="[URL]" target="_blank" rel="noopener">[1]</a> and ensure each number has a matching source appendix item.
+12. Produce a source appendix for the report builder to consolidate: <div class="references"><h4>Source Appendix</h4><ol><li id="source-1"><a href="[URL]" target="_blank" rel="noopener">[Title]</a> - [Publisher, Date]</li></ol></div>.
+13. End with <div class="ci-implications"><h4>Implication for Unilabs</h4><ul><li>...</li></ul></div> using 1-2 specific bullets.
+14. Do not include a validation summary, confidence score, internal QA note, no-activity block, or filler sentence.
 
 OUTPUT: Clean HTML only. No markdown. No explanatory text outside HTML tags."""
 
 
 def _validator_user_prompt(agent, out_a, out_b):
-    return f"""Merge and validate these two competitive intelligence analyses for the "{agent['title']}" section.
+    return f"""Merge and validate these two market intelligence analyses for the "{agent['title']}" section.
 
-=== UNILABS RESEARCH VERSION (Agent A) ===
+=== UPDATE DISCOVERY VERSION (Agent A) ===
 {out_a}
 
-=== COMPETITOR INTELLIGENCE VERSION (Agent B) ===
+=== IMPACT ANALYSIS VERSION (Agent B) ===
 {out_b}
 
 Produce the single final merged HTML section following your system instructions exactly."""
@@ -299,13 +373,13 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
                 call_anthropic(
                     client,
                     _sys_prompt_research(agent, config, agent["agentA"]),
-                    _user_prompt_research(agent, config, "Unilabs Research"),
+                    _user_prompt_research(agent, config, "Update discovery"),
                     use_web_search=True,
                 ),
                 call_anthropic(
                     client,
                     _sys_prompt_research(agent, config, agent["agentB"]),
-                    _user_prompt_research(agent, config, "Competitor Intelligence"),
+                    _user_prompt_research(agent, config, "Impact analysis"),
                     use_web_search=True,
                 ),
             )
@@ -314,13 +388,13 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
                 call_gemini(
                     client,
                     _sys_prompt_research(agent, config, agent["agentA"]),
-                    _user_prompt_research(agent, config, "Unilabs Research"),
+                    _user_prompt_research(agent, config, "Update discovery"),
                     use_google_search=True,
                 ),
                 call_gemini(
                     client,
                     _sys_prompt_research(agent, config, agent["agentB"]),
-                    _user_prompt_research(agent, config, "Competitor Intelligence"),
+                    _user_prompt_research(agent, config, "Impact analysis"),
                     use_google_search=True,
                 ),
             )
@@ -329,12 +403,12 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
                 call_responses_search(
                     client,
                     _sys_prompt_research(agent, config, agent["agentA"]),
-                    _user_prompt_research(agent, config, "Unilabs Research"),
+                    _user_prompt_research(agent, config, "Update discovery"),
                 ),
                 call_responses_search(
                     client,
                     _sys_prompt_research(agent, config, agent["agentB"]),
-                    _user_prompt_research(agent, config, "Competitor Intelligence"),
+                    _user_prompt_research(agent, config, "Impact analysis"),
                 ),
             )
     except Exception as e:
@@ -370,7 +444,7 @@ async def run_single_agent(client, agent, config, provider="openai", on_status=N
             )
     except Exception as e:
         log.warning(f"Agent {aid} validator error: {e}")
-        validated = out_a   # fallback to Unilabs Research version
+        validated = out_a   # fallback to first research version
         error = f"Validator failed: {e}"
 
     if on_status:

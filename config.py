@@ -1,7 +1,7 @@
 """
 Central configuration — constants, agent definitions, defaults.
-Competitive Intelligence Edition: Every module is centred on
-Unilabs vs. named competitors.
+Market Intelligence Edition: modules focus on selected-period
+competitor and market updates with implications for Unilabs.
 """
 import os
 
@@ -68,118 +68,109 @@ LANGUAGES = [
     {"code": "da", "name": "Danish"}, {"code": "ar", "name": "Arabic"},
 ]
 
-# --- Agent Definitions (Competitive Intelligence) -------------------------
-# Every agent is rewritten to centre on Unilabs positioning vs competitors.
+# --- Agent Definitions (Market Intelligence) ------------------------------
+# Modules focus on selected-period competitor/market updates and implications.
+# Sections 8 and 10 from the original UAT output are intentionally removed.
 AGENTS = [
-    # == Core Competitive Modules (10) ==
-    {"id": "competitive-overview",    "title": "Competitive Landscape Overview",
+    # == Core Market Intel Modules (8) ==
+    {"id": "competitive-overview", "title": "Competitive Landscape Overview",
      "category": "core", "color": "#003366",
-     "agentA": "Map Unilabs market position vs each named competitor: revenue, lab count, geographic overlap, and growth trajectory comparison.",
-     "agentB": "Identify where competitors are gaining or losing ground relative to Unilabs: new market entries, exits, and share shifts."},
+     "agentA": "Find selected-period competitor updates only: newly published revenue figures, important news, new tests, new tools, new services, and market entries or exits.",
+     "agentB": "Assess how selected-period competitor updates could impact or benefit Unilabs; avoid company descriptions and generic competitor profiles."},
 
-    {"id": "ma-deal-tracker",         "title": "M&A & Deal Activity Tracker",
+    {"id": "ma-deal-tracker", "title": "M&A & Deal Activity Tracker",
      "category": "core", "color": "#003366",
-     "agentA": "Track every acquisition, divestiture, and PE deal by competitors in the last quarter and assess impact on Unilabs competitive position.",
-     "agentB": "Identify potential M&A targets that competitors might pursue before Unilabs and flag white-space acquisition opportunities for Unilabs."},
+     "agentA": "Track selected-period M&A deals by diagnostics competitors plus relevant PE and healthcare diagnostics deals; omit competitors with no activity.",
+     "agentB": "Assess deal rationale, affected markets, transaction values where available, and implications or opportunities for Unilabs."},
 
-    {"id": "revenue-benchmarking",    "title": "Revenue & Financial Benchmarking",
+    {"id": "revenue-benchmarking", "title": "Revenue & Financial Benchmarking",
      "category": "core", "color": "#003366",
-     "agentA": "Compare Unilabs revenue, EBITDA margins, and growth rates against publicly reported competitor financials (Synlab, Eurofins, Sonic, Limbach).",
-     "agentB": "Analyze competitor capital allocation, capex trends, debt levels, and investor guidance that signal strategic intent against Unilabs."},
+     "agentA": "Find the latest selected-period competitor financial publications: revenue, EBITDA or EBITA, margin, growth, guidance, and capital allocation.",
+     "agentB": "Build concise financial benchmarking with last-three-year revenue and EBITDA or EBITA data where public; include simple tables and chart-ready values."},
 
-    {"id": "market-share-analysis",   "title": "Market Share & Positioning Analysis",
+    {"id": "market-share-analysis", "title": "Market Share & Positioning Analysis",
      "category": "core", "color": "#003366",
-     "agentA": "Estimate Unilabs vs competitor market shares by country and segment (routine, specialty, pathology, radiology, genetics).",
-     "agentB": "Identify market segments where Unilabs is under-indexed vs competitors and where competitors are aggressively expanding."},
+     "agentA": "Estimate competitor market share percentages for Europe and selected countries; collect revenue, countries served, and growth projections.",
+     "agentB": "Summarize market share in a simple table only; no company descriptions or Unilabs overview."},
 
-    {"id": "service-portfolio",       "title": "Service Portfolio Comparison",
+    {"id": "service-portfolio", "title": "Service Portfolio Comparison",
      "category": "core", "color": "#00A3E0",
-     "agentA": "Compare Unilabs test menu, turnaround times, and service breadth vs key competitors across diagnostics, pathology, radiology, and genetics.",
-     "agentB": "Identify gaps in Unilabs service offering that competitors already fill (e.g., DTC testing, at-home collection, specialty panels)."},
+     "agentA": "Find selected-period competitor service, test-menu, pathology, radiology, genetics, digital portal, home collection, or specialty panel launches.",
+     "agentB": "Explain only what changed in competitor portfolios during the period and what it means for Unilabs; omit if no real update."},
 
-    {"id": "pricing-strategy",        "title": "Pricing & Contract Strategy",
+    {"id": "pricing-strategy", "title": "Pricing & Contract Strategy",
      "category": "core", "color": "#00A3E0",
-     "agentA": "Analyze competitor pricing visible through public tenders, DTC platforms, and published tariffs relative to Unilabs pricing.",
-     "agentB": "Track competitor contract wins/losses, tender outcomes, and framework agreements that directly affect Unilabs market position."},
+     "agentA": "Analyze pricing regulation updates, reimbursement changes, tariff changes, public tender price signals, and market pricing updates in selected Unilabs markets.",
+     "agentB": "Track competitor pricing updates only where public; connect price or regulation changes to risks or opportunities for Unilabs."},
 
-    {"id": "tech-capability-gap",     "title": "Technology & Capability Gap Analysis",
+    {"id": "tech-capability-gap", "title": "Technology & Capability Gap Analysis",
      "category": "core", "color": "#00A3E0",
-     "agentA": "Benchmark Unilabs digital capabilities (AI, automation, LIMS, patient portal) against competitor technology investments and deployments.",
-     "agentB": "Track competitor partnerships with tech vendors (Paige.AI, Tempus, Oxford Nanopore, Roche) and assess Unilabs technology gaps."},
+     "agentA": "Find selected-period technology updates from European diagnostics competitors and relevant US players: AI, digital pathology, automation, LIMS, portals, genomics tools.",
+     "agentB": "Assess competitor and US-player technology moves for implications to Unilabs; do not describe Unilabs capabilities upfront."},
 
-    {"id": "geographic-battleground", "title": "Geographic Battleground Analysis",
+    {"id": "customer-win-loss", "title": "Customer Win/Loss Intelligence",
      "category": "core", "color": "#00A3E0",
-     "agentA": "Map competitor presence vs Unilabs in each operating market: lab density, new openings, closures, and expansion signals.",
-     "agentB": "Identify geographic markets where Unilabs faces rising competitive pressure and markets where Unilabs has defensible advantages."},
-
-    {"id": "customer-win-loss",       "title": "Customer Win/Loss Intelligence",
-     "category": "core", "color": "#00A3E0",
-     "agentA": "Track hospital/health system contract awards and losses involving Unilabs vs competitors from tender databases and press releases.",
-     "agentB": "Analyze patterns in why customers switch to or from Unilabs: pricing, service quality, turnaround, geographic coverage."},
-
-    {"id": "strategic-moves",         "title": "Competitor Strategic Moves & Signals",
-     "category": "core", "color": "#00A3E0",
-     "agentA": "Monitor competitor earnings calls, investor presentations, and press releases for strategic signals that may impact Unilabs.",
-     "agentB": "Track regulatory filings, patent applications, and CE IVD submissions by competitors that reveal future competitive threats."},
+     "agentA": "Track selected-period customer wins and losses, hospital contracts, health-system awards, tenders, and outsourcing decisions involving competitors.",
+     "agentB": "Summarize only verified wins or losses and the impact or benefit for Unilabs; omit competitors with no win/loss update."},
 
     # == Intelligence Modules (12) ==
-    {"id": "brand-perception",        "title": "Brand & Reputation Benchmarking",
+    {"id": "brand-perception", "title": "Brand & Reputation Benchmarking",
      "category": "intelligence", "color": "#F43F5E",
-     "agentA": "Compare Unilabs patient reviews (Google, Trustpilot) vs competitor ratings across all operating markets — scores, volume, trends.",
-     "agentB": "Analyze healthcare professional perception of Unilabs vs competitors: referral preferences, NPS proxies, complaint themes."},
+     "agentA": "Find selected-period competitor reputation updates: review score shifts, major complaints, media reputation events, patient sentiment signals.",
+     "agentB": "Return a compact table of competitor reputation signals, source/date, and implication for Unilabs."},
 
-    {"id": "talent-war",              "title": "Talent & Workforce Competition",
+    {"id": "talent-war", "title": "Talent & Workforce Competition",
      "category": "intelligence", "color": "#8B5CF6",
-     "agentA": "Analyze competitor job postings to infer expansion plans, new capabilities, and areas where they are out-hiring Unilabs.",
-     "agentB": "Track C-suite and senior leadership movements between Unilabs and competitors; monitor salary benchmarks and employer branding."},
+     "agentA": "Analyze selected-period LinkedIn and company career-site hiring trends for each competitor: open roles, locations, role types, seniority, expansion signals.",
+     "agentB": "Track big layoffs, hiring surges, leadership hiring, and open-position trend vs prior months where available; include chart-ready role counts."},
 
-    {"id": "digital-ecosystem",       "title": "Digital & AI Arms Race",
+    {"id": "digital-ecosystem", "title": "Digital & AI Arms Race",
      "category": "intelligence", "color": "#4F46E5",
-     "agentA": "Map competitor investments in diagnostic AI, digital pathology, and lab automation vs Unilabs current capabilities.",
-     "agentB": "Track VC/PE funding into diagnostic startups that competitors are partnering with or acquiring, and assess threat to Unilabs."},
+     "agentA": "Find selected-period digital and AI updates from competitors and US diagnostics or health-tech players: product launches, partnerships, funding, deployments.",
+     "agentB": "Assess which updates create direct threats, partnership openings, or capability gaps for Unilabs."},
 
-    {"id": "regulatory-advantage",    "title": "Regulatory & Compliance Edge",
+    {"id": "regulatory-advantage", "title": "Regulatory & Compliance Edge",
      "category": "intelligence", "color": "#0D9488",
-     "agentA": "Compare Unilabs IVDR readiness, accreditation status, and compliance posture vs competitors across EU markets.",
-     "agentB": "Track competitor regulatory penalties, audit findings, or compliance advantages that could shift customer decisions away from Unilabs."},
+     "agentA": "Find selected-period regulatory, accreditation, IVDR, reimbursement, penalty, audit, and compliance updates affecting competitors or diagnostics markets.",
+     "agentB": "Explain the market impact and implication for Unilabs; omit generic IVDR background if no new update happened."},
 
-    {"id": "payer-relationship",      "title": "Payer & Health System Relationships",
+    {"id": "payer-relationship", "title": "Payer & Health System Relationships",
      "category": "intelligence", "color": "#EA580C",
-     "agentA": "Map competitor relationships with key payers, insurers, and health systems vs Unilabs partnerships in each market.",
-     "agentB": "Track hospital outsourcing decisions, lab consolidation trends, and PPP models where Unilabs competes head-to-head with rivals."},
+     "agentA": "Find selected-period payer, insurer, hospital, PPP, outsourcing, and health-system partnership updates involving competitors.",
+     "agentB": "Summarize only real relationship or contract changes and implication for Unilabs."},
 
-    {"id": "esg-benchmarking",        "title": "ESG & Sustainability Comparison",
+    {"id": "esg-benchmarking", "title": "ESG & Sustainability Comparison",
      "category": "intelligence", "color": "#10B981",
-     "agentA": "Benchmark Unilabs ESG disclosures, net-zero pledges, and sustainability metrics vs competitor published reports and CSRD readiness.",
-     "agentB": "Identify areas where competitors lead Unilabs on ESG (waste reduction, social impact, governance) and where Unilabs leads."},
+     "agentA": "Find selected-period ESG, CSRD, and sustainability updates from competitors: new reports, targets, waste, emissions, governance, social impact.",
+     "agentB": "Return a concise update table with impact for Unilabs; no generic ESG benchmarking."},
 
-    {"id": "supply-chain-risk",       "title": "Supply Chain & Operational Risk",
+    {"id": "supply-chain-risk", "title": "Supply Chain & Operational Risk",
      "category": "intelligence", "color": "#F59E0B",
-     "agentA": "Compare Unilabs supplier dependencies vs competitors: reagent sourcing, equipment vendors, single-source risks.",
-     "agentB": "Track geopolitical risks (tariffs, FX, energy costs, Brexit) that disproportionately affect Unilabs vs competitors."},
+     "agentA": "Find selected-period operational, supply chain, lab disruption, reagent or vendor, energy, logistics, tariff, FX, and resilience updates affecting competitors.",
+     "agentB": "Explain whether these updates create risk, cost pressure, or opportunity for Unilabs."},
 
-    {"id": "clinical-pipeline",       "title": "Clinical & Scientific Pipeline Race",
+    {"id": "clinical-pipeline", "title": "Clinical & Scientific Pipeline Race",
      "category": "intelligence", "color": "#7DC242",
-     "agentA": "Track competitor adoption of emerging tests (liquid biopsy, polygenic risk, companion diagnostics) vs Unilabs pipeline readiness.",
-     "agentB": "Monitor clinical trial partnerships and guideline changes that could advantage specific competitors over Unilabs."},
+     "agentA": "Find selected-period clinical and scientific updates: emerging tests, clinical studies, guideline changes, liquid biopsy, companion diagnostics, genomics panels.",
+     "agentB": "Assess competitor pipeline implications and practical response options for Unilabs."},
 
-    {"id": "tender-intelligence",     "title": "Tender & Procurement Battleground",
+    {"id": "tender-intelligence", "title": "Tender & Procurement Battleground",
      "category": "intelligence", "color": "#EF4444",
-     "agentA": "Monitor active tenders on TED/OJEU where Unilabs and competitors are likely to bid, with estimated contract values and timelines.",
-     "agentB": "Analyze recent tender outcomes: who won, who lost, at what price, and what this signals about competitor pricing strategy vs Unilabs."},
+     "agentA": "Find selected-period active tenders and tender outcomes in Unilabs markets: buyer, country, service scope, value, duration, winner, deadline.",
+     "agentB": "Analyze what tender outcomes signal about pricing, service scope, and competitive pressure for Unilabs."},
 
-    {"id": "leadership-movements",    "title": "Leadership & Board Movement Tracker",
+    {"id": "leadership-movements", "title": "Leadership & Board Movement Tracker",
      "category": "intelligence", "color": "#8B5CF6",
-     "agentA": "Track C-suite appointments, departures, and board changes at all named competitors and assess strategic implications for Unilabs.",
-     "agentB": "Monitor ex-Unilabs executives now at competitors and competitor talent that Unilabs could recruit to close capability gaps."},
+     "agentA": "Find selected-period C-suite, board, country GM, senior scientific, commercial, digital, and operations leadership moves at competitors.",
+     "agentB": "Explain likely strategic meaning and talent implications for Unilabs; no generic org descriptions."},
 
-    {"id": "media-share-of-voice",    "title": "Media & Share of Voice Analysis",
+    {"id": "media-share-of-voice", "title": "Media & Share of Voice Analysis",
      "category": "intelligence", "color": "#0D9488",
-     "agentA": "Measure Unilabs share of voice vs competitors in healthcare trade media, financial press, and industry conferences.",
-     "agentB": "Track competitor PR campaigns, crisis events, and thought leadership positioning that affects perception relative to Unilabs."},
+     "agentA": "Find selected-period competitor media, PR, crisis, conference, campaign, award, or thought-leadership updates.",
+     "agentB": "Summarize share-of-voice signals in table format and explain relevance for Unilabs communications or positioning."},
 
-    {"id": "partnership-alliances",   "title": "Partnerships & Alliance Mapping",
+    {"id": "partnership-alliances", "title": "Partnerships & Alliance Mapping",
      "category": "intelligence", "color": "#4F46E5",
-     "agentA": "Map strategic alliances each competitor has (pharma co-development, tech partnerships, academic collaborations) vs Unilabs partnerships.",
-     "agentB": "Identify partnership gaps where Unilabs lacks relationships that competitors leverage for competitive advantage."},
+     "agentA": "Find selected-period competitor partnerships and alliances: pharma, medtech, AI, academia, hospitals, payers, startups, distributors.",
+     "agentB": "Assess partnership relevance, affected markets, and implication or partnership opportunity for Unilabs."},
 ]

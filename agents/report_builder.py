@@ -1,11 +1,11 @@
-"""Assemble final HTML report from validated agent outputs — Competitive Intelligence Edition.
+"""Assemble final HTML report from validated agent outputs — Market Intelligence Edition.
 Enhanced with comprehensive sections and frequency-specific formatting."""
 from datetime import datetime
 import re
 from config import AGENTS, COUNTRIES
 
 
-CALLOUT_CLASSES = ("conflict-data", "validation-note", "no-activity")
+CALLOUT_CLASSES = ("conflict-data", "validation-note", "no-activity", "unilabs-summary")
 REFERENCE_BLOCK_RE = re.compile(
     r'<div\b(?=[^>]*class=["\'][^"\']*\breferences\b[^"\']*["\'])[^>]*>.*?</div>',
     re.IGNORECASE | re.DOTALL,
@@ -46,6 +46,10 @@ def _strip_repeated_boilerplate(content):
         r'<p\b[^>]*>[^<]*(?:Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform|integrated European diagnostics platform across laboratory medicine)[\s\S]*?</p>',
         r'<li\b[^>]*>[^<]*(?:Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform|integrated European diagnostics platform across laboratory medicine)[\s\S]*?</li>',
         r'\s*Unilabs enters Q[1-4] 20\d{2} as an integrated European diagnostics platform[^.]*\.\s*',
+        r'<p\b[^>]*>[^<]*(?:Unilabs operates diagnostic labs|Unilabs is a European diagnostics|Unilabs provides diagnostic)[\s\S]*?</p>',
+        r'<li\b[^>]*>[^<]*(?:Unilabs operates diagnostic labs|Unilabs is a European diagnostics|Unilabs provides diagnostic)[\s\S]*?</li>',
+        r'<p\b[^>]*>[^<]*(?:no material public signal|no verified public information|no significant public activity|no material update|no real update)[\s\S]*?</p>',
+        r'<li\b[^>]*>[^<]*(?:no material public signal|no verified public information|no significant public activity|no material update|no real update)[\s\S]*?</li>',
     ]
     cleaned = content or ''
     for pattern in patterns:
@@ -160,7 +164,7 @@ def build_html_report(sections, config):
       <h2 style="font-family:'Roboto',sans-serif;font-size:20px;font-weight:700;color:#003366;
           text-transform:uppercase;margin-bottom:16px;letter-spacing:0.5px">Executive Summary</h2>
       <div style="font-family:'Roboto',sans-serif;font-size:14px;color:#374151;line-height:1.8">
-        <p>{frequency_note} in-depth competitive intelligence across {len(sections)} key modules.</p>
+        <p>{frequency_note} in-depth market intelligence across {len(sections)} key modules.</p>
         <p style="margin-top:10px"><strong>Report Type:</strong> {report_frequency} | <strong>Coverage:</strong> {geo}</p>
         <p style="margin-top:10px"><strong>Benchmarked Against:</strong> {comp_label}</p>
         <p style="margin-top:10px">Each section contains dual-agent analysis with AI cross-validation to ensure accuracy and actionability.</p>
@@ -170,7 +174,7 @@ def build_html_report(sections, config):
 
     return f"""<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Unilabs Competitive Intelligence Report -- {time_label}</title>
+<title>Unilabs Market Intelligence Report -- {time_label}</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <style>
   *{{margin:0;padding:0;box-sizing:border-box}}
@@ -200,9 +204,9 @@ def build_html_report(sections, config):
       border-bottom:4px solid #EF4444;margin-bottom:40px">
     <div style="display:flex;align-items:center;gap:14px">
       <div style="width:56px;height:56px;background:linear-gradient(135deg,#003366,#EF4444);border-radius:12px;display:flex;
-          align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:28px">CI</div>
+          align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:28px">MI</div>
       <div><div style="font-size:32px;font-weight:900;color:#003366">unilabs</div>
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:3px;color:#EF4444;font-weight:700">Competitive Intelligence</div></div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:3px;color:#EF4444;font-weight:700">Market Intelligence</div></div>
     </div>
     <div style="text-align:right;font-size:13px;color:#6B7280;line-height:1.6">
       <div><strong style="color:#003366">Generated:</strong> {date_str}</div>
@@ -216,8 +220,8 @@ def build_html_report(sections, config):
   </header>
   <div style="text-align:center;margin-bottom:50px">
     <h1 style="font-size:34px;font-weight:900;color:#003366;text-transform:uppercase;letter-spacing:1px;
-        margin-bottom:10px">COMPETITIVE INTELLIGENCE REPORT</h1>
-    <div style="font-size:18px;color:#6B7280;font-weight:300">Unilabs vs. Competitors &mdash; European Diagnostics</div>
+        margin-bottom:10px">MARKET INTELLIGENCE REPORT</h1>
+    <div style="font-size:18px;color:#6B7280;font-weight:300">Competitor Updates &mdash; European Diagnostics</div>
     <div style="display:inline-block;background:linear-gradient(135deg,#003366,#EF4444);color:#fff;padding:10px 28px;border-radius:24px;
         margin-top:16px;font-weight:500;font-size:14px">{report_frequency} Report &middot; {time_label}</div>
   </div>
@@ -242,7 +246,7 @@ def build_html_report(sections, config):
   
   <footer style="margin-top:60px;padding-top:24px;border-top:3px solid #E5E7EB;display:flex;
       justify-content:space-between;align-items:center;font-size:12px;color:#6B7280">
-    <div>&copy; {datetime.now().year} Unilabs. Competitive Intelligence Platform.</div>
+    <div>&copy; {datetime.now().year} Unilabs. Market Intelligence Platform.</div>
     <div style="background:#FEE2E2;color:#991B1B;padding:6px 16px;border-radius:6px;font-weight:700;
         font-size:11px;text-transform:uppercase;letter-spacing:0.5px">Strictly Confidential</div>
   </footer>

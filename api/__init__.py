@@ -1,5 +1,5 @@
 """
-FastAPI backend -- REST endpoints for the Competitive Intelligence dashboard.
+FastAPI backend -- REST endpoints for the Market Intelligence dashboard.
 """
 import asyncio, os, json, logging
 from datetime import datetime
@@ -20,7 +20,7 @@ from scheduler import (
 )
 
 log = logging.getLogger("api")
-app = FastAPI(title="Unilabs Competitive Intelligence Platform", version="1.0.0")
+app = FastAPI(title="Unilabs Market Intelligence Platform", version="1.0.0")
 OPENAI_CHAT_MODEL = "gpt-5.2"
 
 # Serve static files (if directory exists)
@@ -81,7 +81,7 @@ class SchedulerConfig(BaseModel):
 def on_startup():
     db.init_db()
     start_scheduler()
-    log.info("Competitive Intelligence Platform started.")
+    log.info("Market Intelligence Platform started.")
 
 
 def _select_ai_provider():
@@ -196,9 +196,9 @@ def dashboard():
         return HTMLResponse("""
         <!DOCTYPE html>
         <html>
-        <head><title>Unilabs Competitive Intelligence</title></head>
+        <head><title>Unilabs Market Intelligence</title></head>
         <body>
-            <h1>Unilabs Competitive Intelligence Platform</h1>
+            <h1>Unilabs Market Intelligence Platform</h1>
             <p>Dashboard template not found. The API is running.</p>
             <ul>
                 <li><a href="/docs">API Documentation</a></li>
@@ -429,7 +429,7 @@ async def _execute_run_bg(run_id, config, api_key, provider="openai"):
         f.write(html)
 
     db.update_run(run_id, status="completed", report_html=html,
-                  summary=f"{len(sections)} competitive intel sections validated. File: {filename}")
+                  summary=f"{len(sections)} market intel sections validated. File: {filename}")
 
 
 # --- Runs -----------------------------------------------------------------
@@ -593,8 +593,8 @@ def delete_custom_agent(agent_id: int):
 
 
 # --- Chat Agent -----------------------------------------------------------
-_CHAT_SYSTEM = """You are a Competitive Intelligence assistant for Unilabs.
-You help users launch CI analysis runs by understanding their natural language requests.
+_CHAT_SYSTEM = """You are a Market Intelligence assistant for Unilabs.
+You help users launch Market Intel analysis runs by understanding their natural language requests.
 
 AVAILABLE AGENTS (id -> title):
 {agents}
@@ -635,12 +635,12 @@ If the user is just asking a question (not requesting a run), respond with:
 
 If the user's request is ambiguous, ask for clarification with "action": "reply".
 
-Be concise, helpful, and knowledgeable about competitive intelligence in European diagnostics."""
+Be concise, helpful, and knowledgeable about market intelligence in European diagnostics."""
 
 
 @app.post("/api/chat")
 async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
-    """GPT-powered chat agent that interprets user intent and triggers CI runs."""
+    """GPT-powered chat agent that interprets user intent and triggers Market Intel runs."""
     provider, api_key = _select_ai_provider()
     if not api_key:
         return {"action": "reply",
@@ -687,7 +687,7 @@ async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
         agent_ids = [aid for aid in parsed.get("agents", []) if aid in valid_ids]
         if not agent_ids:
             return {"action": "reply",
-                    "message": "I couldn't match any agents to your request. Could you be more specific about what competitive analysis you need?"}
+                    "message": "I couldn't match any agents to your request. Could you be more specific about what market update analysis you need?"}
 
         # Build run config
         run_config = {
@@ -706,7 +706,7 @@ async def chat_agent(msg: ChatMessage, background_tasks: BackgroundTasks):
         background_tasks.add_task(_execute_run_bg, run_id, run_config, api_key, provider)
 
         agent_names = [a["title"] for a in AGENTS if a["id"] in agent_ids]
-        friendly_msg = parsed.get("message", f"Launching {len(agent_ids)} CI agents.")
+        friendly_msg = parsed.get("message", f"Launching {len(agent_ids)} Market Intel agents.")
 
         return {
             "action": "run",

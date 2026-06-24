@@ -1,5 +1,5 @@
 """
-PDF report builder — generates a professional competitive intelligence PDF
+PDF report builder — generates a professional market intelligence PDF
 from validated agent outputs using reportlab.
 """
 import io, re, html as html_mod
@@ -43,7 +43,17 @@ def _strip_html(text):
     if not text:
         return ""
     text = re.sub(r'<br\s*/?>', '\n', text)
-    text = re.sub(r'<li[^>]*>', '  - ', text)
+    text = re.sub(
+        r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+        r'<link href="\1" color="blue">\2</link>',
+        text,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    text = re.sub(r'<tr[^>]*>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</tr>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'<t[dh][^>]*>', ' | ', text, flags=re.IGNORECASE)
+    text = re.sub(r'</t[dh]>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'<li\b[^>]*>', '  - ', text)
     text = re.sub(r'</?(ul|ol|div|section|span|table|tr|td|th|thead|tbody)[^>]*>', '', text)
     text = re.sub(r'<h[1-6][^>]*>', '\n', text)
     text = re.sub(r'</h[1-6]>', '\n', text)
@@ -53,7 +63,7 @@ def _strip_html(text):
     text = re.sub(r'</strong>', '</b>', text)
     text = re.sub(r'<em[^>]*>', '<i>', text)
     text = re.sub(r'</em>', '</i>', text)
-    text = re.sub(r'<(?!/?[bi]>)[^>]+>', '', text)
+    text = re.sub(r'<(?!/?(?:b|i|link)\b)[^>]+>', '', text)
     text = html_mod.unescape(text)
     text = re.sub(r'&(?!amp;|lt;|gt;|quot;|apos;|#)', '&amp;', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
@@ -141,7 +151,7 @@ def _header_footer(canvas_obj, doc):
 
     canvas_obj.setFont("Helvetica-Bold", 8)
     canvas_obj.setFillColor(NAVY)
-    canvas_obj.drawString(25*mm, h - 16*mm, "UNILABS COMPETITIVE INTELLIGENCE")
+    canvas_obj.drawString(25*mm, h - 16*mm, "UNILABS MARKET INTELLIGENCE")
     canvas_obj.setFont("Helvetica", 7)
     canvas_obj.setFillColor(GRAY)
     canvas_obj.drawRightString(w - 25*mm, h - 16*mm, "Strictly Confidential")
@@ -183,7 +193,7 @@ def build_pdf_report(sections, config):
     story.append(Spacer(1, 30*mm))
 
     logo_data = [
-        [Paragraph('<font color="#003366" size="28"><b>CI</b></font>', styles["title"]),
+        [Paragraph('<font color="#003366" size="28"><b>MI</b></font>', styles["title"]),
          Paragraph('<font color="#003366" size="26"><b>unilabs</b></font>', styles["title"])],
     ]
     logo_table = Table(logo_data, colWidths=[18*mm, 60*mm])
@@ -194,8 +204,8 @@ def build_pdf_report(sections, config):
     story.append(logo_table)
     story.append(Spacer(1, 8*mm))
 
-    story.append(Paragraph("COMPETITIVE INTELLIGENCE REPORT", styles["title"]))
-    story.append(Paragraph("Unilabs vs. Competitors -- European Diagnostics", styles["subtitle"]))
+    story.append(Paragraph("MARKET INTELLIGENCE REPORT", styles["title"]))
+    story.append(Paragraph("Competitor Updates -- European Diagnostics", styles["subtitle"]))
     story.append(Spacer(1, 4*mm))
 
     meta_text = f"{time_label}  |  {geo}  |  {date_str}"

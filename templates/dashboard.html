@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Unilabs — Competitive Intelligence Platform</title>
+<title>Unilabs - Market Intelligence Platform</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -89,7 +89,7 @@ const Spinner = ({size=16, color="var(--navy)"}) => (
    CATEGORY META
    =================================================================== */
 const CATEGORY_META = {
-  core: {label:"Core Competitive Modules", icon:Icons.target, gradient:"linear-gradient(135deg,#003366,#00557a)"},
+  core: {label:"Core Market Intel Modules", icon:Icons.target, gradient:"linear-gradient(135deg,#003366,#00557a)"},
   intelligence: {label:"Intelligence Modules", icon:Icons.zap, gradient:"linear-gradient(135deg,#00a3e0,#0077b6)"},
 };
 
@@ -173,26 +173,26 @@ const AgentCard = ({agent, status, enabled, onToggle, onExpand, expanded}) => {
           <span style={{transform:expanded?'rotate(90deg)':'none',transition:'.2s',display:'inline-flex'}}>
             <Icons.chevRight size={14}/>
           </span>
-          Competitive Focus Details
+          Market Intel Focus Details
         </div>
         {expanded && (
           <div className="slide-in" style={{marginTop:10,padding:12,borderRadius:10,background:'var(--bg-secondary)',
                                             border:'1px solid var(--border)',fontSize:12,lineHeight:1.6}}>
             <div style={{marginBottom:8}}>
-              <span style={{color:'var(--navy)',fontWeight:600}}>Unilabs Research:</span>
+              <span style={{color:'var(--navy)',fontWeight:600}}>Update Discovery:</span>
               <span style={{color:'var(--text-secondary)',marginLeft:6}}>{agent.agentA}</span>
             </div>
             <div style={{marginBottom:8}}>
-              <span style={{color:'var(--navy)',fontWeight:600}}>Competitor Intelligence:</span>
+              <span style={{color:'var(--navy)',fontWeight:600}}>Impact Analysis:</span>
               <span style={{color:'var(--text-secondary)',marginLeft:6}}>{agent.agentB}</span>
             </div>
             <div style={{padding:'6px 10px',borderRadius:8,background:'var(--purple-light)',
                          border:'1px solid rgba(124,58,237,.12)',display:'flex',alignItems:'flex-start',gap:6}}>
               <Icons.shield size={13} color="var(--purple)"/>
               <div>
-                <span style={{color:'var(--purple)',fontWeight:600,fontSize:11}}>CI Validator</span>
+                <span style={{color:'var(--purple)',fontWeight:600,fontSize:11}}>Market Intel Validator</span>
                 <span style={{color:'var(--text-muted)',fontSize:11,display:'block'}}>
-                  Merges competitive insights, ensures Unilabs vs competitor framing, flags unverified claims
+                  Merges selected-period updates, removes filler, verifies sources, and produces implications
                 </span>
               </div>
             </div>
@@ -256,7 +256,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
             </div>
             <div>
               <h2 style={{fontSize:18,fontWeight:800,color:'var(--navy)'}}>Admin Settings</h2>
-              <p style={{fontSize:12,color:'var(--text-muted)'}}>Configure API keys for competitive intelligence</p>
+              <p style={{fontSize:12,color:'var(--text-muted)'}}>Configure API keys for market intelligence</p>
             </div>
           </div>
           <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',
@@ -298,7 +298,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
                 background:'var(--green-light)',color:'var(--green)',fontWeight:600}}>CONFIGURED</span>}
             </div>
             <p style={{fontSize:11,color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
-              Powers CI agents with OpenAI web search for research, validation, and chat agent.
+              Powers Market Intel agents with OpenAI web search for research, validation, and chat agent.
             </p>
             <div style={{position:'relative'}}>
               <input type={showOai?"text":"password"} value={openaiKey}
@@ -328,7 +328,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
                 background:'var(--purple-light)',color:'var(--purple)',fontWeight:600}}>CONFIGURED</span>}
             </div>
             <p style={{fontSize:11,color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
-              Optional alternative provider for CI agents and chat. You can configure OpenAI, Anthropic, Gemini, or any combination.
+              Optional alternative provider for Market Intel agents and chat. You can configure OpenAI, Anthropic, Gemini, or any combination.
             </p>
             <div style={{position:'relative'}}>
               <input type={showAnthropic?"text":"password"} value={anthropicKey}
@@ -358,7 +358,7 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
                 background:'var(--teal-light)',color:'#0077b6',fontWeight:600}}>CONFIGURED</span>}
             </div>
             <p style={{fontSize:11,color:'var(--text-muted)',marginBottom:8,lineHeight:1.5}}>
-              Optional Google provider for CI agents with Gemini Google Search grounding for research.
+              Optional Google provider for Market Intel agents with Gemini Google Search grounding for research.
             </p>
             <div style={{position:'relative'}}>
               <input type={showGemini?"text":"password"} value={geminiKey}
@@ -377,11 +377,11 @@ const AdminPanel = ({onClose, keysStatus, onSaveKeys}) => {
 
           {/* Pipeline diagram */}
           <div style={{padding:14,borderRadius:12,background:'var(--bg-secondary)',border:'1px solid var(--border)',marginBottom:18}}>
-            <p style={{fontSize:10,fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:10}}>CI Pipeline</p>
+            <p style={{fontSize:10,fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:10}}>Market Intel Pipeline</p>
             <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,flexWrap:'wrap'}}>
               {[{label:'Agent A + Search',color:'var(--green)'},{label:'Agent B + Search',color:'var(--green)'},
                 {label:'\u2192',color:'var(--text-muted)',isSep:true},
-                {label:'CI Validator',color:'var(--purple)'}].map((n,i)=>(
+                {label:'Market Intel Validator',color:'var(--purple)'}].map((n,i)=>(
                 n.isSep ? <span key={i} style={{fontSize:18,color:n.color,fontWeight:300}}>{n.label}</span> :
                 <span key={i} style={{padding:'5px 12px',borderRadius:8,background:`${n.color}10`,
                   border:`1px solid ${n.color}25`,color:n.color,fontSize:10,fontWeight:700}}>{n.label}</span>
@@ -578,7 +578,7 @@ const RunConfigPanel = ({agents, countries, languages, competitors, enabledAgent
             background:running?'var(--slate)':'var(--gradient-brand)',opacity:(running||!keysOk||enabledAgents.length===0)?0.5:1,
             display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
           {running?<><Spinner size={16} color="white"/> Running {enabledAgents.length} Agents...</>
-                  :<><Icons.target size={16} color="white"/> Launch {enabledAgents.length} CI Agents</>}
+                  :<><Icons.target size={16} color="white"/> Launch {enabledAgents.length} Market Intel Agents</>}
         </button>
         {!keysOk && <p style={{textAlign:'center',fontSize:10,color:'#dc2626',marginTop:6}}>Configure an OpenAI, Anthropic, or Gemini API key in Admin Settings first</p>}
       </div>
@@ -696,9 +696,9 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
     <div>
       <div style={{marginBottom:24,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
         <div>
-          <h1 style={{fontSize:22,fontWeight:900,color:'var(--navy)',marginBottom:4}}>CI Agent Registry</h1>
+          <h1 style={{fontSize:22,fontWeight:900,color:'var(--navy)',marginBottom:4}}>Market Intel Agent Registry</h1>
           <p style={{fontSize:13,color:'var(--text-muted)'}}>
-            Each module runs two AI agents with web search focused on Unilabs vs competitors, then a validator merges and verifies the competitive insights.
+            Each module runs two AI agents with web search: one discovers selected-period updates, then one analyzes implications for Unilabs.
           </p>
         </div>
         <button onClick={()=>setShowCreate(!showCreate)}
@@ -720,7 +720,7 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
               </div>
               <div>
                 <div style={{fontSize:14,fontWeight:800,color:'var(--purple)'}}>Create Custom Agent</div>
-                <div style={{fontSize:10,color:'var(--text-muted)'}}>Defines a new CI module that runs alongside all built-in agents</div>
+                <div style={{fontSize:10,color:'var(--text-muted)'}}>Defines a new Market Intel module that runs alongside all built-in agents</div>
               </div>
             </div>
             <button onClick={()=>setShowCreate(false)}
@@ -732,7 +732,7 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
               border:'1px solid rgba(124,58,237,.15)',display:'flex',gap:10,alignItems:'flex-start'}}>
               <Icons.zap size={14} color="var(--purple)" style={{flexShrink:0,marginTop:2}}/>
               <p style={{fontSize:11,color:'var(--text-secondary)',lineHeight:1.6,margin:0}}>
-                Each custom agent runs <strong>two parallel AI searches</strong> — one focused on Unilabs, one on competitors — then a <strong>CI Validator</strong> merges the findings into a report section. You only need to define the two research directions below.
+                Each custom agent runs <strong>two parallel AI searches</strong> - one for update discovery, one for impact analysis - then a <strong>Market Intel Validator</strong> merges the findings into a report section. You only need to define the two research directions below.
               </p>
             </div>
 
@@ -754,22 +754,22 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
 
             <div>
               <label style={{fontSize:10,fontWeight:600,color:'var(--navy)',marginBottom:4,display:'block'}}>
-                Unilabs Research Focus *
+                Update Discovery Focus *
               </label>
               <textarea value={form.agentA} onChange={e=>setForm(f=>({...f,agentA:e.target.value}))}
                 placeholder="e.g. Analyse Unilabs patient satisfaction scores, NPS data, and service quality vs. competitor benchmarks across markets."
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid rgba(0,51,102,.25)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
-              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI what to research <strong>about Unilabs</strong> — its position, metrics, or strengths in this area.</p>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI which selected-period updates, sources, and market signals to find.</p>
             </div>
 
             <div>
               <label style={{fontSize:10,fontWeight:600,color:'var(--teal)',marginBottom:4,display:'block'}}>
-                Competitor Intelligence Focus *
+                Impact Analysis Focus *
               </label>
               <textarea value={form.agentB} onChange={e=>setForm(f=>({...f,agentB:e.target.value}))}
                 placeholder="e.g. Track how competitors are investing in digital booking, patient portals, and service quality improvements."
                 style={{width:'100%',padding:'10px 12px',borderRadius:8,border:'1px solid rgba(0,163,224,.25)',background:'white',color:'var(--text-primary)',fontSize:12,outline:'none',minHeight:90,fontFamily:'inherit'}}/>
-              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI what to research <strong>about competitors</strong> — their moves, investments, or gaps in this area.</p>
+              <p style={{fontSize:10,color:'var(--text-muted)',margin:'4px 0 0 2px'}}>Tell the AI how to interpret those updates for Unilabs.</p>
             </div>
 
             <div style={{display:'flex',alignItems:'center',gap:10}}>
@@ -824,9 +824,9 @@ const AgentsPage = ({agents, agentStatuses, onAgentsChanged}) => {
                 </div>
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:12,marginTop:16}}>
-                {[{label:'Unilabs Research',desc:agent.agentA,color:'var(--navy)',bg:'var(--navy-light)',bd:'rgba(0,51,102,.12)'},
-                  {label:'Competitor Intelligence',desc:agent.agentB,color:'var(--teal)',bg:'var(--teal-light)',bd:'var(--teal-medium)'},
-                  {label:'CI Validator',desc:'Merges competitive insights, ensures Unilabs vs competitor framing, flags unverified claims, produces competitive implications.',
+                {[{label:'Update Discovery',desc:agent.agentA,color:'var(--navy)',bg:'var(--navy-light)',bd:'rgba(0,51,102,.12)'},
+                  {label:'Impact Analysis',desc:agent.agentB,color:'var(--teal)',bg:'var(--teal-light)',bd:'var(--teal-medium)'},
+                  {label:'Market Intel Validator',desc:'Merges selected-period updates, removes filler, verifies sources, and produces implications.',
                    color:'var(--purple)',bg:'var(--purple-light)',bd:'rgba(124,58,237,.12)'}
                 ].map((col,j)=>(
                   <div key={j} style={{padding:12,borderRadius:12,background:col.bg,border:`1px solid ${col.bd}`}}>
@@ -905,7 +905,7 @@ const SchedulerPanel = () => {
         {nextRun && enabled && (
           <div style={{padding:'8px 12px',borderRadius:8,background:'var(--teal-light)',border:'1px solid var(--teal-medium)',marginBottom:12,display:'flex',alignItems:'center',gap:6}}>
             <Icons.clock size={13} color="#0077b6"/>
-            <div><div style={{fontSize:10,fontWeight:700,color:'#0077b6'}}>Next CI Scan</div>
+            <div><div style={{fontSize:10,fontWeight:700,color:'#0077b6'}}>Next Market Intel Scan</div>
               <div style={{fontSize:11,color:'var(--text-secondary)'}}>{new Date(nextRun).toLocaleString()}</div></div>
           </div>
         )}
@@ -950,12 +950,12 @@ const SchedulerPanel = () => {
 };
 
 /* ===================================================================
-   CHAT PANEL — GPT-powered CI assistant
+   CHAT PANEL - GPT-powered Market Intel assistant
    =================================================================== */
 const ChatPanel = ({onRunStarted, agents}) => {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    {role:'assistant',content:'Hi! I\'m your CI assistant. Tell me what competitive analysis you need.\n\nExamples:\n- "Run M&A and pricing analysis for Q2 in NL and CH"\n- "Analyze Synlab and Eurofins talent moves across all markets"\n- "Run all agents for FY 2026"'}
+    {role:'assistant',content:'Hi! I\'m your Market Intel assistant. Tell me what market update analysis you need.\n\nExamples:\n- "Run M&A and pricing analysis for Q2 in NL and CH"\n- "Analyze Synlab and Eurofins talent moves across all markets"\n- "Run all agents for FY 2026"'}
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1021,7 +1021,7 @@ const ChatPanel = ({onRunStarted, agents}) => {
         <div style={{display:'flex',alignItems:'center',gap:10}}>
           <Icons.msgCircle size={18} color="white"/>
           <div>
-            <div style={{fontSize:14,fontWeight:800}}>CI Assistant</div>
+            <div style={{fontSize:14,fontWeight:800}}>Market Intel Assistant</div>
             <div style={{fontSize:10,opacity:.8}}>Powered by configured AI provider</div>
           </div>
         </div>
@@ -1197,16 +1197,16 @@ const App = () => {
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             <div style={{width:34,height:34,borderRadius:9,background:'var(--gradient-brand)',
                          display:'flex',alignItems:'center',justifyContent:'center',
-                         color:'white',fontWeight:900,fontSize:13}}>CI</div>
+                         color:'white',fontWeight:900,fontSize:13}}>MI</div>
             <div>
               <span style={{fontSize:16,fontWeight:900,color:'var(--navy)',letterSpacing:'-.2px'}}>unilabs</span>
               <span style={{fontSize:10,color:'var(--teal)',marginLeft:8,fontWeight:700,
-                            textTransform:'uppercase',letterSpacing:'.8px'}}>Competitive Intel</span>
+                            textTransform:'uppercase',letterSpacing:'.8px'}}>Market Intel</span>
             </div>
           </div>
           <div style={{display:'flex',gap:3}}>
             {[{id:'dashboard',label:'Dashboard',icon:Icons.home},
-              {id:'agents',label:'CI Agents',icon:Icons.target}].map(tab=>(
+              {id:'agents',label:'Market Intel Agents',icon:Icons.target}].map(tab=>(
               <button key={tab.id} onClick={()=>setPage(tab.id)}
                 style={{display:'flex',alignItems:'center',gap:6,padding:'7px 14px',borderRadius:9,
                   border:'none',cursor:'pointer',fontSize:13,fontWeight:600,transition:'.2s',
@@ -1241,7 +1241,7 @@ const App = () => {
               {/* Stats */}
               <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:24}}>
                 {[
-                  {label:'CI Agents',value:agents.length,icon:Icons.target,color:'var(--navy)'},
+                  {label:'Market Intel Agents',value:agents.length,icon:Icons.target,color:'var(--navy)'},
                   {label:'Enabled',value:enabledAgents.length,icon:Icons.check,color:'var(--green)'},
                   {label:'Total Runs',value:runs.length,icon:Icons.clock,color:'var(--amber)'},
                   {label:'Competitors',value:config.competitors.length+config.custom_competitors.length,icon:Icons.users,color:'var(--purple)'},
