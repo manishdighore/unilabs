@@ -108,6 +108,36 @@ def _select_ai_provider():
 async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024, temperature=0.3):
     import httpx
 
+    def _openai_response_payload(model, messages, max_tokens):
+        system_parts = []
+        input_parts = []
+        for message in messages:
+            role = (message.get("role") or "user").lower()
+            content = message.get("content") or ""
+            if role == "system":
+                system_parts.append(content)
+            else:
+                input_parts.append(f"{role.upper()}: {content}")
+        payload = {
+            "model": model,
+            "input": "\n\n".join(input_parts) or "Hello",
+            "max_output_tokens": max_tokens,
+        }
+        if system_parts:
+            payload["instructions"] = "\n\n".join(system_parts)
+        return payload
+
+    def _openai_output_text(data):
+        text = data.get("output_text")
+        if text:
+            return text.strip()
+        parts = []
+        for item in data.get("output", []):
+            for content in item.get("content", []):
+                if isinstance(content, dict) and content.get("type") == "output_text":
+                    parts.append(content.get("text", ""))
+        return "\n".join(parts).strip()
+
     if provider == "anthropic":
         system = ""
         claude_messages = []
@@ -166,21 +196,16 @@ async def _provider_chat_completion(provider, api_key, messages, max_tokens=1024
 
     async with httpx.AsyncClient() as client:
         resp = await client.post(
-            "https://api.openai.com/v1/chat/completions",
+            "https://api.openai.com/v1/responses",
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
             },
-            json={
-                "model": OPENAI_CHAT_MODEL,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "messages": messages,
-            },
+            json=_openai_response_payload(OPENAI_CHAT_MODEL, messages, max_tokens),
             timeout=30,
         )
         resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"]
+        return _openai_output_text(resp.json())
 
 
 # --- Dashboard ------------------------------------------------------------
@@ -247,15 +272,15 @@ async def validate_keys(keys: APIKeys):
         if ok:
             try:
                 resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
+                    "https://api.openai.com/v1/responses",
                     headers={
                         "Authorization": f"Bearer {ok}",
                         "Content-Type": "application/json",
                     },
                     json={
                         "model": OPENAI_CHAT_MODEL,
-                        "max_tokens": 10,
-                        "messages": [{"role": "user", "content": "Hi"}],
+                        "max_output_tokens": 10,
+                        "input": "Hi",
                     },
                     timeout=15,
                 )
