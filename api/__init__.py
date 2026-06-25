@@ -279,7 +279,7 @@ async def validate_keys(keys: APIKeys):
                     },
                     json={
                         "model": OPENAI_CHAT_MODEL,
-                        "max_output_tokens": 10,
+                        "max_output_tokens": 16,
                         "input": "Hi",
                     },
                     timeout=15,
